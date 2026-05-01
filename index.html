@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1565C0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FGI Expense">
+<meta name="description" content="Faisal Goraya Industry - Daily Income & Expense Manager">
+<title>FGI Expense Manager</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512x512.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap');
+
+  :root {
+    --primary: #1565C0;
+    --primary-light: #1976D2;
+    --primary-dark: #0D47A1;
+    --accent: #2196F3;
+    --accent-light: #64B5F6;
+    --sky: #E3F2FD;
+    --sky2: #BBDEFB;
+    --white: #FFFFFF;
+    --text-dark: #0D1B2A;
+    --text-med: #2C3E6B;
+    --text-light: #607D8B;
+    --green: #2E7D32;
+    --green-light: #E8F5E9;
+    --red: #C62828;
+    --red-light: #FFEBEE;
+    --orange: #E65100;
+    --orange-light: #FFF3E0;
+    --shadow: 0 4px 20px rgba(21,101,192,0.15);
+    --shadow-lg: 0 8px 40px rgba(21,101,192,0.22);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(160deg, #E3F2FD 0%, #BBDEFB 40%, #ffffff 100%);
+    min-height: 100vh;
+    color: var(--text-dark);
+    overflow-x: hidden;
+  }
+
+  /* ===== LOCK SCREEN ===== */
+  #lockScreen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(160deg, #0D47A1 0%, #1565C0 50%, #1976D2 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 20px; padding: 30px;
+  }
+  #lockScreen .lock-icon {
+    width: 90px; height: 90px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 42px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+  #lockScreen h1 { color: white; font-size: 26px; font-weight: 700; text-align: center; }
+  #lockScreen p { color: rgba(255,255,255,0.7); font-size: 13px; text-align: center; }
+  #lockScreen input {
+    width: 100%; max-width: 320px;
+    padding: 16px 20px; font-size: 22px; letter-spacing: 8px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.1);
+    color: white; text-align: center;
+    outline: none;
+  }
+  #lockScreen input::placeholder { letter-spacing: 2px; font-size: 14px; color: rgba(255,255,255,0.5); }
+  #lockScreen input:focus { border-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.18); }
+  .lock-btn {
+    width: 100%; max-width: 320px;
+    padding: 16px; font-size: 16px; font-weight: 700;
+    background: white; color: var(--primary);
+    border: none; border-radius: 14px; cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.2s;
+  }
+  .lock-btn:active { transform: scale(0.97); }
+  #lockError { color: #FF8A80; font-size: 13px; }
+  .change-pass-link { color: rgba(255,255,255,0.6); font-size: 12px; text-decoration: underline; cursor: pointer; margin-top: -10px; }
+
+  /* ===== MAIN APP ===== */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+  #app.visible { display: flex; }
+
+  /* HEADER */
+  .app-header {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, var(--primary-light) 100%);
+    padding: 18px 20px 22px;
+    position: relative; overflow: hidden;
+  }
+  .app-header::before {
+    content: ''; position: absolute;
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+    top: -80px; right: -60px;
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .header-logo { display: flex; align-items: center; gap: 12px; }
+  .header-logo .logo-box {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .header-logo-text { color: white; }
+  .header-logo-text .brand { font-size: 18px; font-weight: 800; letter-spacing: 1px; }
+  .header-logo-text .sub { font-size: 10px; opacity: 0.75; letter-spacing: 0.5px; }
+  .header-date { color: rgba(255,255,255,0.8); font-size: 11px; text-align: right; }
+  .header-date span { font-size: 14px; font-weight: 600; color: white; display: block; }
+  
+  /* Summary Cards in header */
+  .summary-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .sum-card {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 10px 12px; text-align: center;
+  }
+  .sum-card .label { font-size: 9px; color: rgba(255,255,255,0.7); letter-spacing: 0.5px; text-transform: uppercase; }
+  .sum-card .amount { font-size: 14px; font-weight: 700; color: white; margin-top: 2px; }
+  .sum-card.income .amount { color: #A5D6A7; }
+  .sum-card.expense .amount { color: #EF9A9A; }
+  .sum-card.balance .amount { color: #FFF176; }
+
+  /* NAV */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: white;
+    border-top: 1px solid #E3F2FD;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    box-shadow: 0 -4px 20px rgba(21,101,192,0.12);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 10px 4px 8px;
+    border: none; background: none; cursor: pointer;
+    gap: 3px; transition: all 0.2s; position: relative;
+  }
+  .nav-btn .nav-icon { font-size: 22px; transition: transform 0.2s; }
+  .nav-btn .nav-label { font-size: 9px; font-weight: 500; color: var(--text-light); transition: color 0.2s; }
+  .nav-btn.active .nav-label { color: var(--primary); font-weight: 700; }
+  .nav-btn.active .nav-icon { transform: scale(1.1); }
+  .nav-btn.active::after {
+    content: ''; position: absolute; top: 0; left: 25%; right: 25%; height: 3px;
+    background: var(--primary); border-radius: 0 0 4px 4px;
+  }
+
+  /* CONTENT */
+  .main-content { flex: 1; padding: 16px 16px 100px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-size: 18px; font-weight: 700; color: var(--primary-dark);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .icon-badge {
+    width: 36px; height: 36px; background: var(--sky);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  /* FORM CARD */
+  .form-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    border: 1px solid var(--sky2);
+  }
+
+  /* FORM ELEMENTS */
+  .form-group { margin-bottom: 14px; }
+  .form-label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: var(--text-med); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 13px 16px;
+    border: 1.5px solid #BBDEFB;
+    border-radius: var(--radius-sm);
+    font-size: 14px; font-family: 'Poppins', sans-serif;
+    color: var(--text-dark);
+    background: #F8FBFF;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(21,101,192,0.1);
+    background: white;
+  }
+  .form-textarea { resize: vertical; min-height: 80px; }
+
+  /* PAYMENT METHOD CHIPS */
+  .chips-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    padding: 8px 14px; border-radius: 20px;
+    border: 1.5px solid #BBDEFB;
+    background: #F8FBFF; font-size: 12px; font-weight: 500;
+    color: var(--text-med); cursor: pointer; transition: all 0.2s;
+  }
+  .chip.selected { background: var(--primary); color: white; border-color: var(--primary); }
+
+  /* EXPENSE CATEGORY ROW */
+  .cat-select-row { display: flex; gap: 8px; align-items: center; }
+  .cat-select-row .form-select { flex: 1; }
+  .add-cat-btn {
+    width: 44px; height: 44px; min-width: 44px;
+    background: var(--primary); color: white;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 22px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .add-cat-btn:active { transform: scale(0.93); }
+
+  /* SAVE BUTTON */
+  .save-btn {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+    color: white; border: none; border-radius: var(--radius-sm);
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 15px rgba(21,101,192,0.35);
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-family: 'Poppins', sans-serif;
+  }
+  .save-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(21,101,192,0.25); }
+
+  /* TOAST */
+  #toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px);
+    background: var(--primary-dark); color: white;
+    padding: 12px 24px; border-radius: 30px; font-size: 13px; font-weight: 500;
+    z-index: 9998; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25); white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* REPORT SECTION */
+  .report-tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+  .report-tab {
+    padding: 9px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 1.5px solid #BBDEFB; background: white; color: var(--text-med);
+    cursor: pointer; white-space: nowrap; transition: all 0.2s;
+  }
+  .report-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  .date-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+
+  .report-table-wrap { border-radius: var(--radius-sm); border: 1px solid var(--sky2); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 520px; }
+  thead tr { background: var(--primary); color: white; }
+  th { padding: 10px 10px; font-weight: 600; text-align: left; font-size: 11px; white-space: nowrap; }
+  td { padding: 10px 10px; border-bottom: 1px solid #EEF4FF; color: var(--text-med); white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #F8FBFF; }
+  .amount-cell { font-weight: 600; }
+  .income-amount { color: var(--green); }
+  .expense-amount { color: var(--red); }
+
+  .balance-card {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    border-radius: var(--radius); padding: 20px; margin-bottom: 14px;
+    color: white; display: flex; justify-content: space-between; align-items: center;
+    box-shadow: var(--shadow-lg);
+  }
+  .balance-card .bal-label { font-size: 12px; opacity: 0.8; }
+  .balance-card .bal-amount { font-size: 26px; font-weight: 800; }
+
+  .report-action-row { display: flex; gap: 10px; margin-top: 14px; }
+  .action-btn {
+    flex: 1; padding: 13px; border-radius: var(--radius-sm);
+    border: 1.5px solid; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: all 0.2s; font-family: 'Poppins', sans-serif;
+  }
+  .action-btn.download { background: var(--primary); color: white; border-color: var(--primary); }
+  .action-btn.export { background: white; color: var(--green); border-color: var(--green); }
+  .action-btn.import { background: white; color: var(--orange); border-color: var(--orange); }
+  .action-btn:active { transform: scale(0.96); }
+
+  /* SETTINGS */
+  .settings-item {
+    background: white; border-radius: var(--radius-sm);
+    padding: 16px; display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 2px 10px rgba(21,101,192,0.08);
+    border: 1px solid var(--sky2); margin-bottom: 10px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .settings-item:active { transform: scale(0.98); }
+  .settings-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+    flex-shrink: 0;
+  }
+  .settings-text .title { font-size: 14px; font-weight: 600; color: var(--text-dark); }
+  .settings-text .desc { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(13,27,42,0.6);
+    backdrop-filter: blur(4px); z-index: 500;
+    display: none; align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: white; border-radius: 24px 24px 0 0;
+    padding: 24px 20px 40px; width: 100%; max-width: 480px;
+    animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-title { font-size: 17px; font-weight: 700; color: var(--primary-dark); margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .modal-btn {
+    flex: 1; padding: 13px; border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    border: none; font-family: 'Poppins', sans-serif; transition: all 0.2s;
+  }
+  .modal-btn.confirm { background: var(--primary); color: white; }
+  .modal-btn.cancel { background: var(--sky); color: var(--primary); }
+  .modal-btn:active { transform: scale(0.97); }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--text-light); }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.6; }
+  .empty-state p { font-size: 14px; }
+
+  /* RECENT LIST on dashboard */
+  .recent-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid #EEF4FF;
+  }
+  .recent-item:last-child { border-bottom: none; }
+  .recent-left { display: flex; align-items: center; gap: 12px; }
+  .recent-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .recent-icon.in { background: var(--green-light); }
+  .recent-icon.ex { background: var(--red-light); }
+  .recent-info .name { font-size: 13px; font-weight: 600; color: var(--text-dark); }
+  .recent-info .date { font-size: 10px; color: var(--text-light); margin-top: 1px; }
+  .recent-amount { font-size: 14px; font-weight: 700; }
+  .recent-amount.in { color: var(--green); }
+  .recent-amount.ex { color: var(--red); }
+
+  /* HIDDEN CANVAS for download */
+  #reportCanvas { display: none; }
+</style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="lock-icon">🔐</div>
+  <h1>FGI Expense Manager</h1>
+  <p>Faisal Goraya Industry — Ali Pur Chattha</p>
+  <input type="password" id="pinInput" placeholder="Enter Password" maxlength="20" />
+  <div id="lockError"></div>
+  <button class="lock-btn" onclick="checkPin()">🔓 Unlock</button>
+  <span class="change-pass-link" onclick="showChangePass()">Change Password</span>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- HEADER -->
+  <div class="app-header">
+    <div class="header-top">
+      <div class="header-logo">
+        <div class="logo-box">💼</div>
+        <div class="header-logo-text">
+          <div class="brand">FGI</div>
+          <div class="sub">Expense Manager</div>
+        </div>
+      </div>
+      <div class="header-date">
+        <span id="headerDate">—</span>
+        Ali Pur Chattha
+      </div>
+    </div>
+    <div class="summary-row">
+      <div class="sum-card income">
+        <div class="label">Income</div>
+        <div class="amount" id="headerIncome">₨0</div>
+      </div>
+      <div class="sum-card expense">
+        <div class="label">Expense</div>
+        <div class="amount" id="headerExpense">₨0</div>
+      </div>
+      <div class="sum-card balance">
+        <div class="label">Balance</div>
+        <div class="amount" id="headerBalance">₨0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <!-- DASHBOARD -->
+    <div class="page active" id="pageDashboard">
+      <div class="section-title"><div class="icon-badge">🏠</div>Dashboard</div>
+      
+      <!-- Quick Actions -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+        <button class="save-btn" style="border-radius:var(--radius);padding:18px;flex-direction:column;gap:6px;font-size:14px;background:linear-gradient(135deg,#1B5E20,#2E7D32)" onclick="switchPage('pageIncome')">
+          <span style="font-size:28px">💰</span> Add Income
+        </button>
+        <button class="save-btn" style="border-radius:var(--radius);padding:18px;flex-direction:column;gap:6px;font-size:14px;background:linear-gradient(135deg,#B71C1C,#C62828)" onclick="switchPage('pageExpense')">
+          <span style="font-size:28px">💸</span> Add Expense
+        </button>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="form-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <span style="font-size:15px;font-weight:700;color:var(--primary-dark)">Recent Transactions</span>
+          <span style="font-size:11px;color:var(--accent);cursor:pointer;font-weight:600" onclick="switchPage('pageReport')">View All</span>
+        </div>
+        <div id="recentList">
+          <div class="empty-state"><div class="empty-icon">📋</div><p>Abhi koi entry nahi hai</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INCOME PAGE -->
+    <div class="page" id="pageIncome">
+      <div class="section-title"><div class="icon-badge">💰</div>Add Income</div>
+      <div class="form-card">
+        <div class="form-group">
+          <label class="form-label">📅 Date</label>
+          <input type="date" class="form-input" id="incDate" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">👤 Customer Name</label>
+          <input type="text" class="form-input" id="incCustomer" placeholder="Customer ka naam..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">💵 Amount (PKR)</label>
+          <input type="number" class="form-input" id="incAmount" placeholder="0.00" inputmode="decimal" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">💳 Payment Method</label>
+          <div class="chips-row" id="paymentChips">
+            <div class="chip selected" onclick="selectChip(this,'payment')">💵 Cash</div>
+            <div class="chip" onclick="selectChip(this,'payment')">📱 Online</div>
+            <div class="chip" onclick="selectChip(this,'payment')">🔵 Easypaisa</div>
+            <div class="chip" onclick="selectChip(this,'payment')">🟡 JazzCash</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📝 Remarks (Optional)</label>
+          <textarea class="form-textarea" id="incRemarks" placeholder="Koi note ya description..."></textarea>
+        </div>
+        <button class="save-btn" onclick="saveIncome()">
+          💾 Save Income Entry
+        </button>
+      </div>
+    </div>
+
+    <!-- EXPENSE PAGE -->
+    <div class="page" id="pageExpense">
+      <div class="section-title"><div class="icon-badge">💸</div>Add Expense</div>
+      <div class="form-card">
+        <div class="form-group">
+          <label class="form-label">📅 Date</label>
+          <input type="date" class="form-input" id="expDate" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">💵 Amount (PKR)</label>
+          <input type="number" class="form-input" id="expAmount" placeholder="0.00" inputmode="decimal" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">🏷️ Expense Category</label>
+          <div class="cat-select-row">
+            <select class="form-select" id="expCategory">
+              <option value="">-- Category Select Karein --</option>
+            </select>
+            <button class="add-cat-btn" onclick="openAddCat()" title="New Category Add Karein">+</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📝 Remarks</label>
+          <textarea class="form-textarea" id="expRemarks" placeholder="Kharche ki detail..."></textarea>
+        </div>
+        <button class="save-btn" style="background:linear-gradient(135deg,#B71C1C,#C62828);box-shadow:0 4px 15px rgba(198,40,40,0.35)" onclick="saveExpense()">
+          💾 Save Expense Entry
+        </button>
+      </div>
+    </div>
+
+    <!-- REPORT PAGE -->
+    <div class="page" id="pageReport">
+      <div class="section-title"><div class="icon-badge">📊</div>Reports</div>
+
+      <!-- Date Filter -->
+      <div class="form-card" style="padding:14px;">
+        <div style="font-size:12px;font-weight:600;color:var(--text-med);margin-bottom:10px;">📅 Date Filter</div>
+        <div class="date-filter-row">
+          <div>
+            <label class="form-label">From</label>
+            <input type="date" class="form-input" id="filterFrom" />
+          </div>
+          <div>
+            <label class="form-label">To</label>
+            <input type="date" class="form-input" id="filterTo" />
+          </div>
+        </div>
+        <button class="save-btn" style="padding:12px;font-size:13px" onclick="applyFilter()">🔍 Filter Apply Karein</button>
+      </div>
+
+      <!-- Report Tabs -->
+      <div class="report-tabs">
+        <div class="report-tab active" onclick="showReportTab(this,'income')">💰 Income</div>
+        <div class="report-tab" onclick="showReportTab(this,'expense')">💸 Expense</div>
+        <div class="report-tab" onclick="showReportTab(this,'combined')">📊 Combined</div>
+      </div>
+
+      <!-- Balance Card -->
+      <div class="balance-card" id="balanceCard">
+        <div>
+          <div class="bal-label">Net Balance (Income - Expense)</div>
+          <div class="bal-amount" id="balanceAmt">₨ 0.00</div>
+        </div>
+        <div style="font-size:40px;opacity:0.3">⚖️</div>
+      </div>
+
+      <!-- Table Area -->
+      <div id="reportTableArea"></div>
+
+      <!-- Action Buttons -->
+      <div class="report-action-row">
+        <button class="action-btn download" onclick="downloadReportImage()">📥 Image Download</button>
+      </div>
+      <div class="report-action-row" style="margin-top:8px;">
+        <button class="action-btn export" onclick="exportData()">📤 Export JSON</button>
+        <button class="action-btn import" onclick="document.getElementById('importFile').click()">📥 Import JSON</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)" />
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="pageSettings">
+      <div class="section-title"><div class="icon-badge">⚙️</div>Settings</div>
+      
+      <div class="settings-item" id="installPwaBtn" style="display:none;border-color:#C8E6C9;background:#F1F8E9;" onclick="installPWA()">
+        <div class="settings-icon" style="background:#E8F5E9;">📲</div>
+        <div class="settings-text">
+          <div class="title" style="color:#2E7D32">App Install Karein</div>
+          <div class="desc">Home screen pe FGI Expense app add karein</div>
+        </div>
+        <span style="color:#2E7D32;font-size:18px;">›</span>
+      </div>
+
+      <div class="settings-item" onclick="openChangePass()">
+        <div class="settings-icon" style="background:#E3F2FD;">🔐</div>
+        <div class="settings-text">
+          <div class="title">Change Password</div>
+          <div class="desc">App ka password tabdeel karein</div>
+        </div>
+        <span style="color:var(--text-light);font-size:18px;">›</span>
+      </div>
+
+      <div class="settings-item" onclick="manageCats()">
+        <div class="settings-icon" style="background:#FFF8E1;">🏷️</div>
+        <div class="settings-text">
+          <div class="title">Expense Categories</div>
+          <div class="desc">Categories manage karein</div>
+        </div>
+        <span style="color:var(--text-light);font-size:18px;">›</span>
+      </div>
+
+      <div class="settings-item" onclick="exportData()">
+        <div class="settings-icon" style="background:#E8F5E9;">📤</div>
+        <div class="settings-text">
+          <div class="title">Export Data</div>
+          <div class="desc">Sab data JSON file mein save karein</div>
+        </div>
+        <span style="color:var(--text-light);font-size:18px;">›</span>
+      </div>
+
+      <div class="settings-item" onclick="document.getElementById('importFile').click()">
+        <div class="settings-icon" style="background:#FFF3E0;">📥</div>
+        <div class="settings-text">
+          <div class="title">Import Data</div>
+          <div class="desc">JSON file se data restore karein</div>
+        </div>
+        <span style="color:var(--text-light);font-size:18px;">›</span>
+      </div>
+
+      <div class="settings-item" style="border-color:#FFCDD2;" onclick="confirmClearData()">
+        <div class="settings-icon" style="background:#FFEBEE;">🗑️</div>
+        <div class="settings-text">
+          <div class="title" style="color:var(--red)">Clear All Data</div>
+          <div class="desc">Sab entries delete karein (na wापsi)</div>
+        </div>
+        <span style="color:var(--red);font-size:18px;">›</span>
+      </div>
+
+      <div style="text-align:center;margin-top:30px;color:var(--text-light);font-size:11px;">
+        <div style="font-size:28px;margin-bottom:8px;">💼</div>
+        <strong>FGI Daily Expense Manager</strong><br>
+        Faisal Goraya Industry, Ali Pur Chattha<br>
+        Version 1.0
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="navDashboard" onclick="switchPage('pageDashboard',this)">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Dashboard</span>
+    </button>
+    <button class="nav-btn" id="navIncome" onclick="switchPage('pageIncome',this)">
+      <span class="nav-icon">💰</span>
+      <span class="nav-label">Income</span>
+    </button>
+    <button class="nav-btn" id="navExpense" onclick="switchPage('pageExpense',this)">
+      <span class="nav-icon">💸</span>
+      <span class="nav-label">Expense</span>
+    </button>
+    <button class="nav-btn" id="navReport" onclick="switchPage('pageReport',this)">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">Reports</span>
+    </button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ADD CATEGORY MODAL -->
+<div class="modal-overlay" id="modalAddCat">
+  <div class="modal-box">
+    <div class="modal-title">🏷️ New Category Add Karein</div>
+    <input type="text" class="form-input" id="newCatInput" placeholder="e.g. Petrol, Bijli, Dawa..." />
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeModal('modalAddCat')">Cancel</button>
+      <button class="modal-btn confirm" onclick="addCategory()">Add Karein</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="modal-overlay" id="modalChangePass">
+  <div class="modal-box">
+    <div class="modal-title">🔐 Password Tabdeel Karein</div>
+    <div class="form-group">
+      <label class="form-label">Purana Password</label>
+      <input type="password" class="form-input" id="oldPassInput" placeholder="Old password..." />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Naya Password</label>
+      <input type="password" class="form-input" id="newPassInput" placeholder="New password..." />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Naya Password Confirm</label>
+      <input type="password" class="form-input" id="confPassInput" placeholder="Confirm password..." />
+    </div>
+    <div id="passError" style="color:var(--red);font-size:12px;margin-bottom:8px;"></div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeModal('modalChangePass')">Cancel</button>
+      <button class="modal-btn confirm" onclick="changePassword()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="modalConfirm">
+  <div class="modal-box">
+    <div class="modal-title" id="confirmTitle">Sure hain?</div>
+    <p id="confirmMsg" style="font-size:13px;color:var(--text-med);margin-bottom:16px;"></p>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeModal('modalConfirm')">Cancel</button>
+      <button class="modal-btn confirm" id="confirmOkBtn" style="background:var(--red);">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE CATS MODAL -->
+<div class="modal-overlay" id="modalManageCats">
+  <div class="modal-box">
+    <div class="modal-title">🏷️ Expense Categories</div>
+    <div id="catList" style="max-height:280px;overflow-y:auto;margin-bottom:16px;"></div>
+    <div style="display:flex;gap:8px;">
+      <input type="text" class="form-input" id="manageCatInput" placeholder="Nai category..." />
+      <button class="add-cat-btn" onclick="addCatFromManage()">+</button>
+    </div>
+    <div class="modal-actions" style="margin-top:12px;">
+      <button class="modal-btn confirm" onclick="closeModal('modalManageCats')">Done</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="reportCanvas"></canvas>
+
+<script>
+// ===== DB =====
+let db;
+const DB_NAME = 'FGI_ExpenseDB';
+const DB_VER = 1;
+
+function initDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      db = e.target.result;
+      if (!db.objectStoreNames.contains('income')) {
+        const s = db.createObjectStore('income', { keyPath: 'id', autoIncrement: true });
+        s.createIndex('date', 'date');
+      }
+      if (!db.objectStoreNames.contains('expense')) {
+        const s2 = db.createObjectStore('expense', { keyPath: 'id', autoIncrement: true });
+        s2.createIndex('date', 'date');
+      }
+      if (!db.objectStoreNames.contains('settings')) {
+        db.createObjectStore('settings', { keyPath: 'key' });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; res(); };
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbPut(store, data) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put(data);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbAdd(store, data) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).add(data);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbGetAll(store) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbGet(store, key) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbDelete(store, key) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).delete(key);
+    req.onsuccess = () => res();
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbClear(store) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).clear();
+    req.onsuccess = () => res();
+    req.onerror = () => rej(req.error);
+  });
+}
+
+// ===== PASSWORD =====
+const DEFAULT_PASS = '1234';
+
+async function getSetting(key) {
+  const r = await dbGet('settings', key);
+  return r ? r.value : null;
+}
+
+async function setSetting(key, value) {
+  await dbPut('settings', { key, value });
+}
+
+async function checkPin() {
+  const pin = document.getElementById('pinInput').value;
+  const stored = (await getSetting('password')) || DEFAULT_PASS;
+  if (pin === stored) {
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    loadApp();
+  } else {
+    document.getElementById('lockError').textContent = '❌ Galat password!';
+    document.getElementById('pinInput').value = '';
+    setTimeout(() => document.getElementById('lockError').textContent = '', 2000);
+  }
+}
+
+document.getElementById('pinInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkPin();
+});
+
+function showChangePass() { openModal('modalChangePass'); }
+function openChangePass() { openModal('modalChangePass'); }
+
+async function changePassword() {
+  const old = document.getElementById('oldPassInput').value;
+  const n = document.getElementById('newPassInput').value;
+  const c = document.getElementById('confPassInput').value;
+  const stored = (await getSetting('password')) || DEFAULT_PASS;
+  const errEl = document.getElementById('passError');
+
+  if (old !== stored) { errEl.textContent = '❌ Purana password galat hai'; return; }
+  if (!n) { errEl.textContent = '❌ Naya password likhein'; return; }
+  if (n !== c) { errEl.textContent = '❌ Passwords match nahi karte'; return; }
+  
+  await setSetting('password', n);
+  closeModal('modalChangePass');
+  ['oldPassInput','newPassInput','confPassInput'].forEach(id => document.getElementById(id).value = '');
+  errEl.textContent = '';
+  showToast('✅ Password tabdeel ho gaya!');
+}
+
+// ===== CATEGORIES =====
+let categories = [];
+
+async function loadCategories() {
+  const stored = await getSetting('categories');
+  categories = stored ? JSON.parse(stored) : ['Petrol','Bijli','Pani','Dawa','Roti/Khana','Transport','Mazdoori','Auzar/Tools','Internet/Mobile','Other'];
+  renderCatSelect();
+}
+
+async function saveCategories() {
+  await setSetting('categories', JSON.stringify(categories));
+  renderCatSelect();
+}
+
+function renderCatSelect() {
+  const sel = document.getElementById('expCategory');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- Category Select Karein --</option>';
+  categories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    if (c === cur) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function openAddCat() { openModal('modalAddCat'); document.getElementById('newCatInput').value = ''; }
+
+async function addCategory() {
+  const val = document.getElementById('newCatInput').value.trim();
+  if (!val) return;
+  if (!categories.includes(val)) { categories.push(val); await saveCategories(); }
+  document.getElementById('expCategory').value = val;
+  closeModal('modalAddCat');
+  showToast('✅ Category add ho gayi!');
+}
+
+function manageCats() {
+  renderCatListModal();
+  openModal('modalManageCats');
+}
+
+function renderCatListModal() {
+  const el = document.getElementById('catList');
+  el.innerHTML = '';
+  categories.forEach((c, i) => {
+    el.innerHTML += `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #EEF4FF;">
+      <span style="font-size:13px;font-weight:500">${c}</span>
+      <button onclick="deleteCategory(${i})" style="background:#FFEBEE;color:#C62828;border:none;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;">Delete</button>
+    </div>`;
+  });
+}
+
+async function deleteCategory(idx) {
+  categories.splice(idx, 1);
+  await saveCategories();
+  renderCatListModal();
+}
+
+async function addCatFromManage() {
+  const val = document.getElementById('manageCatInput').value.trim();
+  if (!val || categories.includes(val)) return;
+  categories.push(val);
+  await saveCategories();
+  document.getElementById('manageCatInput').value = '';
+  renderCatListModal();
+  showToast('✅ Category add!');
+}
+
+// ===== INCOME =====
+async function saveIncome() {
+  const date = document.getElementById('incDate').value;
+  const customer = document.getElementById('incCustomer').value.trim();
+  const amount = parseFloat(document.getElementById('incAmount').value);
+  const method = document.querySelector('#paymentChips .chip.selected')?.textContent.trim() || 'Cash';
+  const remarks = document.getElementById('incRemarks').value.trim();
+
+  if (!date || !customer || isNaN(amount) || amount <= 0) {
+    showToast('⚠️ Date, Customer aur Amount zaroori hain!'); return;
+  }
+
+  await dbAdd('income', { date, customer, amount, method, remarks, createdAt: new Date().toISOString() });
+  showToast('✅ Income save ho gayi!');
+  document.getElementById('incCustomer').value = '';
+  document.getElementById('incAmount').value = '';
+  document.getElementById('incRemarks').value = '';
+  updateHeader();
+  loadRecent();
+}
+
+// ===== EXPENSE =====
+async function saveExpense() {
+  const date = document.getElementById('expDate').value;
+  const amount = parseFloat(document.getElementById('expAmount').value);
+  const category = document.getElementById('expCategory').value;
+  const remarks = document.getElementById('expRemarks').value.trim();
+
+  if (!date || isNaN(amount) || amount <= 0 || !category) {
+    showToast('⚠️ Date, Amount aur Category zaroori hain!'); return;
+  }
+
+  await dbAdd('expense', { date, amount, category, remarks, createdAt: new Date().toISOString() });
+  showToast('✅ Expense save ho gaya!');
+  document.getElementById('expAmount').value = '';
+  document.getElementById('expCategory').value = '';
+  document.getElementById('expRemarks').value = '';
+  updateHeader();
+  loadRecent();
+}
+
+// ===== CHIPS =====
+function selectChip(el, group) {
+  const parent = el.closest('.chips-row');
+  parent.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ===== HEADER STATS =====
+async function updateHeader() {
+  const income = await dbGetAll('income');
+  const expense = await dbGetAll('expense');
+  const totalIn = income.reduce((s, r) => s + r.amount, 0);
+  const totalEx = expense.reduce((s, r) => s + r.amount, 0);
+  const bal = totalIn - totalEx;
+  document.getElementById('headerIncome').textContent = '₨' + fmt(totalIn);
+  document.getElementById('headerExpense').textContent = '₨' + fmt(totalEx);
+  document.getElementById('headerBalance').textContent = '₨' + fmt(bal);
+}
+
+// ===== RECENT LIST =====
+async function loadRecent() {
+  const income = await dbGetAll('income');
+  const expense = await dbGetAll('expense');
+  const all = [
+    ...income.map(r => ({ ...r, type: 'income' })),
+    ...expense.map(r => ({ ...r, type: 'expense' }))
+  ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 8);
+
+  const el = document.getElementById('recentList');
+  if (!all.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>Abhi koi entry nahi hai</p></div>';
+    return;
+  }
+  el.innerHTML = all.map(r => `
+    <div class="recent-item">
+      <div class="recent-left">
+        <div class="recent-icon ${r.type === 'income' ? 'in' : 'ex'}">${r.type === 'income' ? '💰' : '💸'}</div>
+        <div class="recent-info">
+          <div class="name">${r.type === 'income' ? r.customer : r.category}</div>
+          <div class="date">${formatDate(r.date)} • ${r.type === 'income' ? r.method : (r.remarks || '—')}</div>
+        </div>
+      </div>
+      <div class="recent-amount ${r.type === 'income' ? 'in' : 'ex'}">${r.type === 'income' ? '+' : '-'}₨${fmt(r.amount)}</div>
+    </div>`).join('');
+}
+
+// ===== REPORT =====
+let currentReportTab = 'income';
+let filteredIncome = [];
+let filteredExpense = [];
+
+async function loadReport() {
+  const income = await dbGetAll('income');
+  const expense = await dbGetAll('expense');
+  const from = document.getElementById('filterFrom').value;
+  const to = document.getElementById('filterTo').value;
+
+  filteredIncome = income.filter(r => (!from || r.date >= from) && (!to || r.date <= to));
+  filteredExpense = expense.filter(r => (!from || r.date >= from) && (!to || r.date <= to));
+
+  const totalIn = filteredIncome.reduce((s, r) => s + r.amount, 0);
+  const totalEx = filteredExpense.reduce((s, r) => s + r.amount, 0);
+  const bal = totalIn - totalEx;
+
+  document.getElementById('balanceAmt').textContent = '₨ ' + fmt(bal);
+  const bc = document.getElementById('balanceCard');
+  bc.style.background = bal >= 0
+    ? 'linear-gradient(135deg,#1B5E20,#2E7D32)'
+    : 'linear-gradient(135deg,#B71C1C,#C62828)';
+
+  renderReportTable();
+}
+
+function applyFilter() { loadReport(); }
+
+function showReportTab(el, tab) {
+  document.querySelectorAll('.report-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentReportTab = tab;
+  renderReportTable();
+}
+
+function renderReportTable() {
+  const area = document.getElementById('reportTableArea');
+
+  if (currentReportTab === 'income') {
+    if (!filteredIncome.length) { area.innerHTML = '<div class="empty-state"><div class="empty-icon">💰</div><p>Koi income entry nahi mili</p></div>'; return; }
+    const total = filteredIncome.reduce((s, r) => s + r.amount, 0);
+    area.innerHTML = `
+      <div class="report-table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Date</th><th>Customer</th><th>Method</th><th>Amount</th><th>Remarks</th></tr></thead>
+          <tbody>
+            ${filteredIncome.map((r, i) => `<tr><td>${i+1}</td><td>${formatDate(r.date)}</td><td>${r.customer}</td><td>${r.method}</td><td class="amount-cell income-amount">₨${fmt(r.amount)}</td><td>${r.remarks || '—'}</td></tr>`).join('')}
+          </tbody>
+          <tfoot><tr style="background:#E8F5E9"><td colspan="4" style="font-weight:700;padding:10px;color:#2E7D32;white-space:nowrap">✅ Total Income</td><td class="amount-cell income-amount" style="font-size:13px;white-space:nowrap">₨${fmt(total)}</td><td></td></tr></tfoot>
+        </table>
+      </div>`;
+  } else if (currentReportTab === 'expense') {
+    if (!filteredExpense.length) { area.innerHTML = '<div class="empty-state"><div class="empty-icon">💸</div><p>Koi expense entry nahi mili</p></div>'; return; }
+    const total = filteredExpense.reduce((s, r) => s + r.amount, 0);
+    area.innerHTML = `
+      <div class="report-table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Date</th><th>Category</th><th>Amount</th><th>Remarks</th></tr></thead>
+          <tbody>
+            ${filteredExpense.map((r, i) => `<tr><td>${i+1}</td><td>${formatDate(r.date)}</td><td>${r.category}</td><td class="amount-cell expense-amount">₨${fmt(r.amount)}</td><td>${r.remarks || '—'}</td></tr>`).join('')}
+          </tbody>
+          <tfoot><tr style="background:#FFEBEE"><td colspan="3" style="font-weight:700;padding:10px;color:#C62828;white-space:nowrap">🔴 Total Expense</td><td class="amount-cell expense-amount" style="font-size:13px;white-space:nowrap">₨${fmt(total)}</td><td></td></tr></tfoot>
+        </table>
+      </div>`;
+  } else {
+    const totalIn = filteredIncome.reduce((s, r) => s + r.amount, 0);
+    const totalEx = filteredExpense.reduce((s, r) => s + r.amount, 0);
+    const allRows = [
+      ...filteredIncome.map(r => ({ date: r.date, desc: r.customer, type: 'Income', method: r.method, amount: r.amount, remarks: r.remarks })),
+      ...filteredExpense.map(r => ({ date: r.date, desc: r.category, type: 'Expense', method: '—', amount: r.amount, remarks: r.remarks }))
+    ].sort((a, b) => a.date > b.date ? -1 : 1);
+
+    area.innerHTML = `
+      <div class="report-table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Date</th><th>Description</th><th>Type</th><th>Amount</th></tr></thead>
+          <tbody>
+            ${allRows.map((r, i) => `<tr><td>${i+1}</td><td>${formatDate(r.date)}</td><td>${r.desc}</td><td><span style="padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;white-space:nowrap;background:${r.type==='Income'?'#E8F5E9':'#FFEBEE'};color:${r.type==='Income'?'#2E7D32':'#C62828'}">${r.type}</span></td><td class="amount-cell ${r.type==='Income'?'income-amount':'expense-amount'}" style="white-space:nowrap">${r.type==='Income'?'+':'-'}₨${fmt(r.amount)}</td></tr>`).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="background:#E8F5E9"><td colspan="4" style="font-weight:700;padding:9px 10px;color:#2E7D32;white-space:nowrap">✅ Total Income</td><td class="income-amount amount-cell" style="white-space:nowrap">₨${fmt(totalIn)}</td></tr>
+            <tr style="background:#FFEBEE"><td colspan="4" style="font-weight:700;padding:9px 10px;color:#C62828;white-space:nowrap">🔴 Total Expense</td><td class="expense-amount amount-cell" style="white-space:nowrap">₨${fmt(totalEx)}</td></tr>
+            <tr style="background:#E3F2FD"><td colspan="4" style="font-weight:700;padding:9px 10px;color:#0D47A1;white-space:nowrap">⚖️ Net Balance</td><td class="amount-cell" style="color:#0D47A1;font-weight:800;white-space:nowrap">₨${fmt(totalIn-totalEx)}</td></tr>
+          </tfoot>
+        </table>
+      </div>`;
+  }
+}
+
+// ===== DOWNLOAD REPORT IMAGE — HD, NO CUTTING =====
+async function downloadReportImage() {
+  showToast('📸 Image bana raha hoon...');
+
+  // Load html2canvas once
+  if (!window.html2canvas) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  const tab = currentReportTab;
+  const totalIn = filteredIncome.reduce((s, r) => s + r.amount, 0);
+  const totalEx = filteredExpense.reduce((s, r) => s + r.amount, 0);
+  const balance = totalIn - totalEx;
+
+  // Build a self-contained offscreen div at fixed 900px width
+  const wrap = document.createElement('div');
+  wrap.style.cssText = `
+    position:fixed; left:-9999px; top:0;
+    width:900px; background:#EEF6FF;
+    font-family:Poppins,sans-serif; padding:0; z-index:-1;
+  `;
+
+  // ---- Header ----
+  let tableHTML = '';
+  if (tab === 'income') {
+    tableHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;">
+        <colgroup>
+          <col style="width:5%"><col style="width:16%"><col style="width:28%">
+          <col style="width:18%"><col style="width:18%"><col style="width:15%">
+        </colgroup>
+        <thead>
+          <tr style="background:#0D47A1;color:white;">
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">#</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Date</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Customer</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Method</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Amount</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredIncome.map((r,i) => `
+            <tr style="background:${i%2===0?'#ffffff':'#F0F7FF'}">
+              <td style="padding:9px 8px;border-bottom:1px solid #DDEEFF;color:#2C3E6B">${i+1}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid #DDEEFF;color:#2C3E6B">${formatDate(r.date)}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid #DDEEFF;color:#0D1B2A;font-weight:500;word-break:break-word">${r.customer}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid #DDEEFF;color:#2C3E6B">${r.method}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid #DDEEFF;color:#2E7D32;font-weight:700">₨${fmt(r.amount)}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid #DDEEFF;color:#607D8B;word-break:break-word">${r.remarks||'—'}</td>
+            </tr>`).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="background:#E8F5E9">
+            <td colspan="4" style="padding:12px 8px;font-weight:700;color:#2E7D32;font-size:14px">Total Income</td>
+            <td style="padding:12px 8px;font-weight:800;color:#2E7D32;font-size:15px">₨${fmt(totalIn)}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>`;
+  } else if (tab === 'expense') {
+    tableHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;">
+        <colgroup>
+          <col style="width:6%"><col style="width:18%"><col style="width:34%">
+          <col style="width:22%"><col style="width:20%">
+        </colgroup>
+        <thead>
+          <tr style="background:#0D47A1;color:white;">
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">#</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Date</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Category</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Amount</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredExpense.map((r,i) => `
+            <tr style="background:${i%2===0?'#ffffff':'#FFF5F5'}">
+              <td style="padding:9px 8px;border-bottom:1px solid #FFE0E0;color:#2C3E6B">${i+1}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid #FFE0E0;color:#2C3E6B">${formatDate(r.date)}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid #FFE0E0;color:#0D1B2A;font-weight:500;word-break:break-word">${r.category}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid #FFE0E0;color:#C62828;font-weight:700">₨${fmt(r.amount)}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid #FFE0E0;color:#607D8B;word-break:break-word">${r.remarks||'—'}</td>
+            </tr>`).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="background:#FFEBEE">
+            <td colspan="3" style="padding:12px 8px;font-weight:700;color:#C62828;font-size:14px">Total Expense</td>
+            <td style="padding:12px 8px;font-weight:800;color:#C62828;font-size:15px">₨${fmt(totalEx)}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>`;
+  } else {
+    const allRows = [
+      ...filteredIncome.map(r => ({ date: r.date, desc: r.customer, type: 'Income', amount: r.amount, remarks: r.remarks })),
+      ...filteredExpense.map(r => ({ date: r.date, desc: r.category, type: 'Expense', amount: r.amount, remarks: r.remarks }))
+    ].sort((a,b) => a.date > b.date ? -1 : 1);
+    tableHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;">
+        <colgroup>
+          <col style="width:5%"><col style="width:15%"><col style="width:35%">
+          <col style="width:16%"><col style="width:29%">
+        </colgroup>
+        <thead>
+          <tr style="background:#0D47A1;color:white;">
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">#</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Date</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Description</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Type</th>
+            <th style="padding:10px 8px;text-align:left;font-size:12px;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${allRows.map((r,i) => `
+            <tr style="background:${i%2===0?'#ffffff':'#F5F9FF'}">
+              <td style="padding:9px 8px;border-bottom:1px solid #E0EEFF;color:#2C3E6B">${i+1}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid #E0EEFF;color:#2C3E6B">${formatDate(r.date)}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid #E0EEFF;color:#0D1B2A;font-weight:500;word-break:break-word">${r.desc}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid #E0EEFF;">
+                <span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;
+                  background:${r.type==='Income'?'#E8F5E9':'#FFEBEE'};
+                  color:${r.type==='Income'?'#2E7D32':'#C62828'}">${r.type}</span>
+              </td>
+              <td style="padding:9px 8px;border-bottom:1px solid #E0EEFF;font-weight:700;
+                color:${r.type==='Income'?'#2E7D32':'#C62828'}">${r.type==='Income'?'+':'-'}₨${fmt(r.amount)}</td>
+            </tr>`).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="background:#E8F5E9"><td colspan="4" style="padding:10px 8px;font-weight:700;color:#2E7D32">Total Income</td><td style="padding:10px 8px;font-weight:800;color:#2E7D32">₨${fmt(totalIn)}</td></tr>
+          <tr style="background:#FFEBEE"><td colspan="4" style="padding:10px 8px;font-weight:700;color:#C62828">Total Expense</td><td style="padding:10px 8px;font-weight:800;color:#C62828">₨${fmt(totalEx)}</td></tr>
+          <tr style="background:#E3F2FD"><td colspan="4" style="padding:10px 8px;font-weight:700;color:#0D47A1">Net Balance</td><td style="padding:10px 8px;font-weight:800;color:#0D47A1">₨${fmt(balance)}</td></tr>
+        </tfoot>
+      </table>`;
+  }
+
+  const tabLabel = { income:'Income Report', expense:'Expense Report', combined:'Combined Report' }[tab];
+  const fromVal = document.getElementById('filterFrom').value;
+  const toVal = document.getElementById('filterTo').value;
+  const dateRange = fromVal && toVal ? `${formatDate(fromVal)} — ${formatDate(toVal)}` : 'Tamam Entries';
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2,'0');
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const yy = String(now.getFullYear()).slice(2);
+  const printDate = `${dd}/${mm}/${yy}`;
+
+  wrap.innerHTML = `
+    <div style="background:linear-gradient(135deg,#0D47A1,#1565C0,#1976D2);padding:28px 32px 22px;color:white;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="width:56px;height:56px;background:rgba(255,255,255,0.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;">💼</div>
+          <div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:1px;">FGI</div>
+            <div style="font-size:11px;opacity:0.75;">Faisal Goraya Industry — Ali Pur Chattha</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:18px;font-weight:700;">${tabLabel}</div>
+          <div style="font-size:11px;opacity:0.75;margin-top:2px;">${dateRange}</div>
+          <div style="font-size:10px;opacity:0.6;margin-top:2px;">Print: ${printDate}</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0;border-bottom:3px solid #BBDEFB;">
+      <div style="flex:1;background:white;padding:16px 24px;text-align:center;border-right:1px solid #BBDEFB;">
+        <div style="font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:0.5px;">Total Income</div>
+        <div style="font-size:22px;font-weight:800;color:#2E7D32;margin-top:4px;">₨${fmt(totalIn)}</div>
+      </div>
+      <div style="flex:1;background:white;padding:16px 24px;text-align:center;border-right:1px solid #BBDEFB;">
+        <div style="font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:0.5px;">Total Expense</div>
+        <div style="font-size:22px;font-weight:800;color:#C62828;margin-top:4px;">₨${fmt(totalEx)}</div>
+      </div>
+      <div style="flex:1;background:${balance>=0?'#E8F5E9':'#FFEBEE'};padding:16px 24px;text-align:center;">
+        <div style="font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:0.5px;">Net Balance</div>
+        <div style="font-size:22px;font-weight:800;color:${balance>=0?'#2E7D32':'#C62828'};margin-top:4px;">₨${fmt(balance)}</div>
+      </div>
+    </div>
+    <div style="padding:20px 24px 28px;background:#F8FBFF;">
+      ${tableHTML}
+      <div style="text-align:center;margin-top:20px;font-size:10px;color:#90A4AE;">
+        FGI Daily Expense Manager • Faisal Goraya Industry • Ali Pur Chattha
+      </div>
+    </div>`;
+
+  document.body.appendChild(wrap);
+  await new Promise(r => setTimeout(r, 300));
+
+  try {
+    const canvas = await html2canvas(wrap, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: '#F8FBFF',
+      width: 900,
+      windowWidth: 900,
+      scrollX: 0, scrollY: 0,
+      logging: false,
+      allowTaint: false
+    });
+
+    document.body.removeChild(wrap);
+    const link = document.createElement('a');
+    link.download = `FGI_${tabLabel.replace(' ','_')}_${dd}-${mm}-${yy}.png`;
+    link.href = canvas.toDataURL('image/png', 1.0);
+    link.click();
+    showToast('✅ HD Report download ho gayi!');
+  } catch(e) {
+    document.body.removeChild(wrap);
+    showToast('❌ Error: ' + e.message);
+  }
+}
+
+// ===== EXPORT / IMPORT =====
+async function exportData() {
+  const income = await dbGetAll('income');
+  const expense = await dbGetAll('expense');
+  const cats = await getSetting('categories');
+  const data = { income, expense, categories: cats, exportedAt: new Date().toISOString(), version: '1.0' };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const now = new Date();
+  link.download = `FGI_Backup_${now.toLocaleDateString('en-GB').replace(/\//g,'-')}.json`;
+  link.href = url; link.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ Data export ho gaya!');
+}
+
+async function importData(e) {
+  const file = e.target.files[0]; if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (data.income) { await dbClear('income'); for (const r of data.income) await dbAdd('income', r); }
+    if (data.expense) { await dbClear('expense'); for (const r of data.expense) await dbAdd('expense', r); }
+    if (data.categories) await setSetting('categories', data.categories);
+    await loadCategories(); await updateHeader(); await loadRecent();
+    showToast('✅ Data import ho gaya!');
+  } catch(err) { showToast('❌ Import error! File check karein'); }
+  e.target.value = '';
+}
+
+// ===== CLEAR DATA =====
+function confirmClearData() {
+  document.getElementById('confirmTitle').textContent = '⚠️ Sab Data Delete Karein?';
+  document.getElementById('confirmMsg').textContent = 'Yeh action na wапси hoga. Sab income aur expense entries delete ho jayengi.';
+  document.getElementById('confirmOkBtn').textContent = 'Delete All';
+  document.getElementById('confirmOkBtn').onclick = async () => {
+    await dbClear('income'); await dbClear('expense');
+    closeModal('modalConfirm');
+    await updateHeader(); await loadRecent();
+    showToast('🗑️ Sab data delete ho gaya');
+  };
+  openModal('modalConfirm');
+}
+
+// ===== NAVIGATION =====
+function switchPage(pageId, navBtn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (navBtn) navBtn.classList.add('active');
+  else {
+    const map = { pageDashboard:'navDashboard', pageIncome:'navIncome', pageExpense:'navExpense', pageReport:'navReport' };
+    const nb = document.getElementById(map[pageId]);
+    if (nb) nb.classList.add('active');
+  }
+  if (pageId === 'pageReport') loadReport();
+  window.scrollTo(0, 0);
+}
+
+// ===== MODAL =====
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ===== TOAST =====
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ===== UTILS =====
+function fmt(n) {
+  if (isNaN(n)) return '0';
+  return n.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y.slice(2)}`;
+}
+
+function setTodayDates() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('incDate').value = today;
+  document.getElementById('expDate').value = today;
+  const d = new Date();
+  document.getElementById('headerDate').textContent = d.toLocaleDateString('en-PK', { day:'numeric', month:'long', year:'numeric' });
+}
+
+// ===== INIT =====
+async function loadApp() {
+  setTodayDates();
+  await loadCategories();
+  await updateHeader();
+  await loadRecent();
+}
+
+(async () => {
+  await initDB();
+})();
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+async function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') showToast('✅ App install ho raha hai!');
+    deferredPrompt = null;
+    document.getElementById('installPwaBtn').style.display = 'none';
+  } else {
+    showToast('ℹ️ Browser mein "Add to Home Screen" use karein');
+  }
+}
+
+// ===== SERVICE WORKER REGISTER =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('FGI SW registered:', reg.scope))
+      .catch(err => console.log('SW error:', err));
+  });
+}
+
+// ===== PWA INSTALL PROMPT =====
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show install button in settings if available
+  const installBtn = document.getElementById('installPwaBtn');
+  if (installBtn) installBtn.style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  showToast('✅ FGI Expense App install ho gaya!');
+  deferredPrompt = null;
+});
+</script>
+</body>
+</html>
