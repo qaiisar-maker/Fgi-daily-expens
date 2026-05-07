@@ -1,44 +1,27 @@
-// FGI Expense Manager - Service Worker v1.0
-const CACHE_NAME = 'fgi-expense-v1';
-const ASSETS = [
+const CACHE_NAME = 'fgi-expense-v2';
+const urlsToCache = [
+  './',
   './index.html',
-  './manifest.json',
-  './icons/icon-192x192.png',
-  './icons/icon-512x512.png',
-  './icons/apple-touch-icon.png',
-  'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+  './manifest.json'
 ];
 
-// Install — cache all assets
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS.filter(url => !url.startsWith('http')));
-    }).then(() => self.skipWaiting())
+self.addEventListener('install', event => {
+  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache).catch(()=>{}))
   );
 });
 
-// Activate — delete old caches
-self.addEventListener('activate', e => {
-  e.waitUntil(
+self.addEventListener('activate', event => {
+  event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
 
-// Fetch — cache first, then network
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(response => {
-        if (!response || response.status !== 200 || response.type === 'opaque') return response;
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-        return response;
-      }).catch(() => caches.match('./index.html'));
-    })
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
