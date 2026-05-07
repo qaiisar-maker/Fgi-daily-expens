@@ -718,7 +718,7 @@ function initDriveAuth(){
   }
   localStorage.setItem(DRIVE_CLIENT_KEY,cid);driveClientId=cid;
   const scope='https://www.googleapis.com/auth/drive.file';
-  const redirect=window.location.origin+window.location.pathname;
+  const redirect='https://qaiisar-maker.github.io/Fgi-daily-expens/';
   const url=`https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(cid)}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${encodeURIComponent(scope)}&prompt=consent`;
   document.getElementById('driveSetupNote').textContent='🔄 Google login page khul raha hai...';
   window.location.href=url;
