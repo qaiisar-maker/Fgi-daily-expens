@@ -694,7 +694,7 @@ let driveToken=null,driveFolderId=null,driveFileId=null,driveClientId=null,drive
 
 function loadDriveState(){
   driveClientId=localStorage.getItem(DRIVE_CLIENT_KEY)||'';
-  driveToken=sessionStorage.getItem(DRIVE_TOKEN_KEY)||null;
+  driveToken=localStorage.getItem(DRIVE_TOKEN_KEY)||null;
   driveFolderId=localStorage.getItem(DRIVE_FOLDER_KEY)||null;
   driveFileId=localStorage.getItem(DRIVE_FILE_KEY)||null;
   if(driveClientId)document.getElementById('driveClientId').value=driveClientId;
@@ -730,7 +730,7 @@ function handleOAuthRedirect(){
   const params=new URLSearchParams(hash.replace('#','?'));
   const token=params.get('access_token');
   if(token){
-    sessionStorage.setItem(DRIVE_TOKEN_KEY,token);
+    localStorage.setItem(DRIVE_TOKEN_KEY,token);
     driveToken=token;driveConnected=true;
     window.history.replaceState({},document.title,window.location.pathname);
     showToast('✅ Google Drive connect ho gaya!');
@@ -750,7 +750,7 @@ function showDriveConnected(){
 
 function disconnectDrive(){
   if(!confirm('Google Drive se disconnect karein?'))return;
-  sessionStorage.removeItem(DRIVE_TOKEN_KEY);
+  localStorage.removeItem(DRIVE_TOKEN_KEY);
   driveToken=null;driveConnected=false;
   document.getElementById('driveSetupForm').style.display='block';
   document.getElementById('driveConnectedInfo').style.display='none';
@@ -811,7 +811,7 @@ async function autoSyncToDrive(){
     }else{
       const ed=await res.json().catch(()=>({}));
       if(ed.error&&ed.error.code===401){
-        driveConnected=false;driveToken=null;sessionStorage.removeItem(DRIVE_TOKEN_KEY);
+        driveConnected=false;driveToken=null;localStorage.removeItem(DRIVE_TOKEN_KEY);
         bar.className='error';bar.textContent='⚠️ Token expire — Reconnect karein';
       }else{bar.className='connected';bar.textContent='⚠️ Sync error'}
     }
