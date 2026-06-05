@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fgi-expense-v3';
+const CACHE_NAME = 'fgi-expense-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -6,7 +6,6 @@ const ASSETS = [
   'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
 ];
-
 // ============ INSTALL ============
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -18,7 +17,6 @@ self.addEventListener('install', event => {
   );
   self.skipWaiting();
 });
-
 // ============ ACTIVATE ============
 self.addEventListener('activate', event => {
   event.waitUntil(
@@ -32,16 +30,12 @@ self.addEventListener('activate', event => {
   );
   self.clients.claim();
 });
-
 // ============ FETCH ============
 self.addEventListener('fetch', event => {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
-
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) {
-        // Return cached, then update in background
         fetch(event.request)
           .then(response => {
             if (response && response.status === 200) {
@@ -53,8 +47,6 @@ self.addEventListener('fetch', event => {
           .catch(() => {});
         return cached;
       }
-
-      // Not in cache — fetch from network
       return fetch(event.request)
         .then(response => {
           if (!response || response.status !== 200) return response;
@@ -65,7 +57,6 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => {
-          // Offline fallback for HTML pages
           if (event.request.headers.get('accept')?.includes('text/html')) {
             return caches.match('./index.html');
           }
