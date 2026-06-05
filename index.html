@@ -10,7 +10,6 @@
 <meta name="apple-mobile-web-app-title" content="FGI Expense">
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<!-- html2canvas for image download -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <title>FGI Expense Manager v3</title>
 <style>
@@ -182,15 +181,11 @@ tr:nth-child(even) td{background:#F8FBFF;}
 @keyframes spin{to{transform:rotate(360deg)}}
 #img-dl-overlay p{color:white;font-size:14px;font-weight:600;}
 
-/* ============ PRINT STYLES — A4 Multi-page ============ */
+/* ============ PRINT STYLES ============ */
 @media print {
   body * { visibility: hidden; }
   #print-area, #print-area * { visibility: visible; }
-  #print-area {
-    position: absolute;
-    left: 0; top: 0;
-    width: 100%;
-  }
+  #print-area { position: absolute; left: 0; top: 0; width: 100%; }
   .print-page-break { page-break-before: always; }
   .no-print { display: none !important; }
 }
@@ -260,13 +255,10 @@ tr:nth-child(even) td{background:#F8FBFF;}
 
 <div id="offline-bar">📵 Offline Mode — Data safe hai</div>
 <div id="toast"></div>
-
-<!-- Hidden print area -->
 <div id="print-area" style="display:none;"></div>
 
 <!-- ============ MAIN APP ============ -->
 <div id="app">
-  <!-- HEADER -->
   <div class="app-header">
     <div class="header-top">
       <div class="header-logo">
@@ -365,7 +357,6 @@ tr:nth-child(even) td{background:#F8FBFF;}
         <div style="font-size:36px;opacity:0.3">⚖️</div>
       </div>
       <div id="reportTableArea"></div>
-      <!-- ACTION BUTTONS -->
       <div class="report-action-row">
         <button class="action-btn download" onclick="printReport()">🖨️ Print / Save PDF</button>
         <button class="action-btn img-dl" onclick="downloadReportImage()">🖼️ Save Image</button>
@@ -380,8 +371,6 @@ tr:nth-child(even) td{background:#F8FBFF;}
     <!-- SETTINGS -->
     <div class="page" id="pageSettings">
       <div class="section-title"><div class="icon-badge">⚙️</div>Settings</div>
-
-      <!-- PIN SETTINGS -->
       <div class="form-card">
         <div style="font-size:14px;font-weight:700;color:var(--primary-dark);margin-bottom:12px;">🔐 PIN Settings</div>
         <div class="settings-item" style="box-shadow:none;border:1px dashed var(--sky2);margin-bottom:8px;" onclick="startChangePin();showLockScreen();">
@@ -395,8 +384,6 @@ tr:nth-child(even) td{background:#F8FBFF;}
           <span style="color:var(--text-light);">›</span>
         </div>
       </div>
-
-      <!-- BACKUP -->
       <div class="form-card">
         <div style="font-size:14px;font-weight:700;color:var(--primary-dark);margin-bottom:12px;">💾 Data Backup & Restore</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
@@ -405,15 +392,11 @@ tr:nth-child(even) td{background:#F8FBFF;}
         </div>
         <div id="importMsg" style="font-size:12px;font-weight:700;margin-top:8px;min-height:14px;"></div>
       </div>
-
-      <!-- CATEGORIES -->
       <div class="settings-item" onclick="manageCats()">
         <div class="settings-icon" style="background:#FFF8E1;">🏷️</div>
         <div class="settings-text"><div class="title">Expense Categories</div><div class="desc">Categories manage karein</div></div>
         <span style="color:var(--text-light);">›</span>
       </div>
-
-      <!-- STORAGE INFO -->
       <div class="form-card">
         <div style="font-size:14px;font-weight:700;color:var(--primary-dark);margin-bottom:8px;">🗄️ Storage Info</div>
         <div id="db-status" style="font-size:12px;color:var(--text-light);line-height:1.8;">
@@ -422,14 +405,11 @@ tr:nth-child(even) td{background:#F8FBFF;}
           ✅ <b>Data kabhi delete nahi hoga</b>
         </div>
       </div>
-
-      <!-- CLEAR DATA -->
       <div class="settings-item" style="border-color:#FFCDD2;" onclick="confirmClearData()">
         <div class="settings-icon" style="background:#FFEBEE;">🗑️</div>
         <div class="settings-text"><div class="title" style="color:var(--red)">Clear All Data</div><div class="desc">Sab entries delete karein</div></div>
         <span style="color:var(--red);">›</span>
       </div>
-
       <div style="text-align:center;margin-top:24px;color:var(--text-light);font-size:11px;">
         <div style="font-size:26px;margin-bottom:6px;">💼</div>
         <strong>FGI Daily Expense Manager v3</strong><br>
@@ -569,15 +549,38 @@ const getSetting=async key=>{const r=await dbGet('settings',key);return r?r.valu
 const setSetting=(key,value)=>dbPut('settings',{key,value});
 
 // ============================================================
-//  LOCK SCREEN HELPERS
+//  LOCK SCREEN HELPERS  ← FIX YAHAN HAI
 // ============================================================
 function showLockScreen(){
-  const ls=document.getElementById('lock-screen');
-  ls.style.cssText='position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#0D47A1 0%,#1565C0 50%,#1976D2 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;overflow-y:auto;';
+  const ls = document.getElementById('lock-screen');
+  // Pehle sab inline styles hata do taake CSS override na ho
+  ls.removeAttribute('style');
+  // Ab force display:flex with full coverage
+  ls.style.cssText = [
+    'display:flex',
+    'flex-direction:column',
+    'align-items:center',
+    'justify-content:center',
+    'position:fixed',
+    'inset:0',
+    'top:0',
+    'left:0',
+    'right:0',
+    'bottom:0',
+    'z-index:9999',
+    'background:linear-gradient(160deg,#0D47A1 0%,#1565C0 50%,#1976D2 100%)',
+    'gap:14px',
+    'padding:24px',
+    'overflow-y:auto',
+    'visibility:visible',
+    'opacity:1'
+  ].join(';');
 }
+
 function hideLockScreen(){
-  const ls=document.getElementById('lock-screen');
-  ls.style.display='none';
+  const ls = document.getElementById('lock-screen');
+  ls.style.display = 'none';
+  ls.style.visibility = 'hidden';
 }
 
 // ============================================================
@@ -605,7 +608,6 @@ async function loadSecretQData(){
   if(!raw)return null;
   try{return JSON.parse(raw);}catch(e){return null;}
 }
-
 async function saveSecretQ(){
   const q=document.getElementById('sqSelect').value;
   const a=document.getElementById('sqAnswer').value.trim();
@@ -617,7 +619,6 @@ async function saveSecretQ(){
   showToast('✅ Secret question save ho gaya!');
   updateSQStatus();
 }
-
 async function updateSQStatus(){
   const d=await loadSecretQData();
   const el=document.getElementById('sqStatusDesc');
@@ -630,7 +631,7 @@ async function updateSQStatus(){
 let pinBuf='',pinMode='enter',newPinTmp='';
 
 // ============================================================
-//  LOCK APP
+//  LOCK APP  ← FIX YAHAN HAI
 // ============================================================
 function lockApp(){
   pinBuf='';
@@ -642,9 +643,11 @@ function lockApp(){
   updDots();
   document.getElementById('forgot-pin-section').style.display='none';
   document.getElementById('pin-entry-ui').style.display='flex';
-  const appEl=document.getElementById('app');
+  // App completely hide karo pehle
+  const appEl = document.getElementById('app');
   appEl.classList.remove('visible');
-  appEl.style.display='none';
+  appEl.style.cssText = 'display:none !important; visibility:hidden;';
+  // Ab lock screen dikhao
   showLockScreen();
 }
 
@@ -661,7 +664,7 @@ async function pinPress(k){
         if(pinBuf===currentPin){
           hideLockScreen();
           const appEl=document.getElementById('app');
-          appEl.style.display='flex';
+          appEl.style.cssText='display:flex;visibility:visible;';
           appEl.classList.add('visible');
           await loadApp();
         }else{
@@ -825,7 +828,6 @@ async function saveIncome(){
   document.getElementById('incCustomer').value='';document.getElementById('incAmount').value='';document.getElementById('incRemarks').value='';
   await updateHeader();await loadRecent();
 }
-
 async function saveExpense(){
   const date=document.getElementById('expDate').value;
   const amount=parseFloat(document.getElementById('expAmount').value);
@@ -839,7 +841,6 @@ async function saveExpense(){
   document.getElementById('expAmount').value='';document.getElementById('expCategory').value='';document.getElementById('expRemarks').value='';
   await updateHeader();await loadRecent();
 }
-
 function selectChip(el,group){
   const parent=el.closest('.chips-row');
   parent.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected'));
@@ -904,7 +905,7 @@ function renderReportTable(){
 }
 
 // ============================================================
-//  DOWNLOAD REPORT AS IMAGE (NEW FEATURE)
+//  DOWNLOAD REPORT AS IMAGE
 // ============================================================
 async function downloadReportImage(){
   const tableArea=document.getElementById('reportTableArea');
@@ -913,20 +914,16 @@ async function downloadReportImage(){
   }
   const overlay=document.getElementById('img-dl-overlay');
   overlay.classList.add('show');
-
   try{
-    // Build a clean off-screen container for capturing
     const container=document.createElement('div');
     container.style.cssText='position:fixed;left:-9999px;top:0;width:800px;background:white;font-family:Poppins,Arial,sans-serif;padding:0;';
     document.body.appendChild(container);
-
     const totalIn=filteredIncome.reduce((s,r)=>s+r.amount,0);
     const totalEx=filteredExpense.reduce((s,r)=>s+r.amount,0);
     const bal=totalIn-totalEx;
     const now=new Date();
     const dateStr=String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
     const tabLabel={income:'Income Report',expense:'Expense Report',combined:'Combined Report'}[currentReportTab];
-
     container.innerHTML=`
       <div style="background:linear-gradient(135deg,#0D47A1,#1565C0);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;">
         <div>
@@ -949,34 +946,21 @@ async function downloadReportImage(){
           <div style="font-size:20px;font-weight:800;color:${bal>=0?'#2E7D32':'#C62828'};">Rs${fmt(bal)}</div>
         </div>
       </div>
-      <div style="padding:16px;">
-        ${tableArea.innerHTML}
-      </div>
+      <div style="padding:16px;">${tableArea.innerHTML}</div>
       <div style="text-align:center;padding:10px;font-size:10px;color:#9E9E9E;border-top:1px solid #EEE;">
         FGI Expense Manager v3 · Ali Pur Chattha · ${dateStr}
       </div>`;
-
-    // Fix table styles for capture (remove min-width constraint)
     const tbl=container.querySelector('table');
     if(tbl){tbl.style.minWidth='0';tbl.style.width='100%';}
-    // Remove action buttons from image
     container.querySelectorAll('button').forEach(b=>b.remove());
-
-    const canvas=await html2canvas(container,{
-      scale:2,
-      useCORS:true,
-      backgroundColor:'#ffffff',
-      logging:false
-    });
+    const canvas=await html2canvas(container,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
     document.body.removeChild(container);
-
     canvas.toBlob(blob=>{
       overlay.classList.remove('show');
       if(!blob){showToast('❌ Image ban nahi saki');return;}
       const fname=`FGI_Report_${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}.png`;
       openFolderPicker('🖼️ Report Image Save Karein?','PNG image download ya share karein',blob,fname);
     },'image/png');
-
   }catch(err){
     overlay.classList.remove('show');
     showToast('❌ Image error: '+err.message);
@@ -984,7 +968,7 @@ async function downloadReportImage(){
 }
 
 // ============================================================
-//  PRINT REPORT — A4 Multi-page
+//  PRINT REPORT
 // ============================================================
 function printReport(){
   const tab=currentReportTab;
@@ -997,7 +981,6 @@ function printReport(){
   const yy=now.getFullYear();
   const dateStr=dd+'/'+mm+'/'+yy;
   const tabLabel={income:'Income Report',expense:'Expense Report',combined:'Combined Report'}[tab];
-
   const pageHeader=`
     <div style="background:linear-gradient(135deg,#0D47A1,#1565C0);padding:18px 22px;color:white;display:flex;align-items:center;justify-content:space-between;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
       <div>
@@ -1020,72 +1003,65 @@ function printReport(){
         <div style="font-size:17px;font-weight:800;color:${balance>=0?'#2E7D32':'#C62828'};font-family:Poppins,Arial,sans-serif;">Rs${fmt(balance)}</div>
       </div>
     </div>`;
-
   let tableHTML='';
   if(tab==='income'){
     tableHTML=`<table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Poppins,Arial,sans-serif;">
-        <thead><tr style="background:#0D47A1;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-          <th style="padding:8px 6px;text-align:left;font-size:10px;">#</th>
-          <th style="padding:8px 6px;text-align:left;font-size:10px;">Date</th>
-          <th style="padding:8px 6px;text-align:left;font-size:10px;">Customer</th>
-          <th style="padding:8px 6px;text-align:left;font-size:10px;">Method</th>
-          <th style="padding:8px 6px;text-align:right;font-size:10px;">Amount</th>
-          <th style="padding:8px 6px;text-align:left;font-size:10px;">Remarks</th>
-        </tr></thead>
-        <tbody>${filteredIncome.map((r,i)=>`<tr style="background:${i%2===0?'#fff':'#F0F7FF'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${i+1}</td>
-          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${formatDate(r.date)}</td>
-          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;font-weight:600;">${r.customer}</td>
-          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${r.method}</td>
-          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;text-align:right;font-weight:700;color:#2E7D32;">Rs${fmt(r.amount)}</td>
-          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;color:#607D8B;">${r.remarks||'—'}</td>
-        </tr>`).join('')}</tbody>
-        <tfoot><tr style="background:#E8F5E9;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-          <td colspan="4" style="padding:9px 6px;font-weight:800;color:#2E7D32;">✅ Total Income</td>
-          <td style="padding:9px 6px;text-align:right;font-weight:800;color:#2E7D32;">Rs${fmt(totalIn)}</td><td></td>
-        </tr></tfoot></table>`;
+      <thead><tr style="background:#0D47A1;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        <th style="padding:8px 6px;text-align:left;font-size:10px;">#</th><th style="padding:8px 6px;text-align:left;font-size:10px;">Date</th>
+        <th style="padding:8px 6px;text-align:left;font-size:10px;">Customer</th><th style="padding:8px 6px;text-align:left;font-size:10px;">Method</th>
+        <th style="padding:8px 6px;text-align:right;font-size:10px;">Amount</th><th style="padding:8px 6px;text-align:left;font-size:10px;">Remarks</th>
+      </tr></thead>
+      <tbody>${filteredIncome.map((r,i)=>`<tr style="background:${i%2===0?'#fff':'#F0F7FF'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${i+1}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${formatDate(r.date)}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;font-weight:600;">${r.customer}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${r.method}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;text-align:right;font-weight:700;color:#2E7D32;">Rs${fmt(r.amount)}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;color:#607D8B;">${r.remarks||'—'}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr style="background:#E8F5E9;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        <td colspan="4" style="padding:9px 6px;font-weight:800;color:#2E7D32;">✅ Total Income</td>
+        <td style="padding:9px 6px;text-align:right;font-weight:800;color:#2E7D32;">Rs${fmt(totalIn)}</td><td></td>
+      </tr></tfoot></table>`;
   }else if(tab==='expense'){
     tableHTML=`<table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Poppins,Arial,sans-serif;">
-        <thead><tr style="background:#0D47A1;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-          <th style="padding:8px 6px;font-size:10px;">#</th>
-          <th style="padding:8px 6px;font-size:10px;">Date</th>
-          <th style="padding:8px 6px;font-size:10px;">Category</th>
-          <th style="padding:8px 6px;text-align:right;font-size:10px;">Amount</th>
-          <th style="padding:8px 6px;font-size:10px;">Remarks</th>
-        </tr></thead>
-        <tbody>${filteredExpense.map((r,i)=>`<tr style="background:${i%2===0?'#fff':'#FFF5F5'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-          <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;">${i+1}</td>
-          <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;">${formatDate(r.date)}</td>
-          <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;font-weight:600;">${r.category}</td>
-          <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;text-align:right;font-weight:700;color:#C62828;">Rs${fmt(r.amount)}</td>
-          <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;color:#607D8B;">${r.remarks||'—'}</td>
-        </tr>`).join('')}</tbody>
-        <tfoot><tr style="background:#FFEBEE;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-          <td colspan="3" style="padding:9px 6px;font-weight:800;color:#C62828;">🔴 Total Expense</td>
-          <td style="padding:9px 6px;text-align:right;font-weight:800;color:#C62828;">Rs${fmt(totalEx)}</td><td></td>
-        </tr></tfoot></table>`;
+      <thead><tr style="background:#0D47A1;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        <th style="padding:8px 6px;font-size:10px;">#</th><th style="padding:8px 6px;font-size:10px;">Date</th>
+        <th style="padding:8px 6px;font-size:10px;">Category</th><th style="padding:8px 6px;text-align:right;font-size:10px;">Amount</th>
+        <th style="padding:8px 6px;font-size:10px;">Remarks</th>
+      </tr></thead>
+      <tbody>${filteredExpense.map((r,i)=>`<tr style="background:${i%2===0?'#fff':'#FFF5F5'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;">${i+1}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;">${formatDate(r.date)}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;font-weight:600;">${r.category}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;text-align:right;font-weight:700;color:#C62828;">Rs${fmt(r.amount)}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;color:#607D8B;">${r.remarks||'—'}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr style="background:#FFEBEE;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        <td colspan="3" style="padding:9px 6px;font-weight:800;color:#C62828;">🔴 Total Expense</td>
+        <td style="padding:9px 6px;text-align:right;font-weight:800;color:#C62828;">Rs${fmt(totalEx)}</td><td></td>
+      </tr></tfoot></table>`;
   }else{
     const allRows=[...filteredIncome.map(r=>({date:r.date,desc:r.customer,type:'Income',amount:r.amount})),...filteredExpense.map(r=>({date:r.date,desc:r.category,type:'Expense',amount:r.amount}))].sort((a,b)=>a.date>b.date?-1:1);
     tableHTML=`<table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Poppins,Arial,sans-serif;">
-        <thead><tr style="background:#0D47A1;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-          <th style="padding:8px 6px;font-size:10px;">#</th><th style="padding:8px 6px;font-size:10px;">Date</th>
-          <th style="padding:8px 6px;font-size:10px;">Description</th><th style="padding:8px 6px;font-size:10px;">Type</th>
-          <th style="padding:8px 6px;text-align:right;font-size:10px;">Amount</th>
-        </tr></thead>
-        <tbody>${allRows.map((r,i)=>`<tr style="background:${i%2===0?'#fff':'#F5F9FF'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${i+1}</td>
-          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${formatDate(r.date)}</td>
-          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;font-weight:600;">${r.desc}</td>
-          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;"><span style="padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;background:${r.type==='Income'?'#E8F5E9':'#FFEBEE'};color:${r.type==='Income'?'#2E7D32':'#C62828'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">${r.type}</span></td>
-          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;text-align:right;font-weight:700;color:${r.type==='Income'?'#2E7D32':'#C62828'};">${r.type==='Income'?'+':'-'}Rs${fmt(r.amount)}</td>
-        </tr>`).join('')}</tbody>
-        <tfoot>
-          <tr style="background:#E8F5E9;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><td colspan="4" style="padding:8px 6px;font-weight:800;color:#2E7D32;">✅ Total Income</td><td style="padding:8px 6px;text-align:right;font-weight:800;color:#2E7D32;">Rs${fmt(totalIn)}</td></tr>
-          <tr style="background:#FFEBEE;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><td colspan="4" style="padding:8px 6px;font-weight:800;color:#C62828;">🔴 Total Expense</td><td style="padding:8px 6px;text-align:right;font-weight:800;color:#C62828;">Rs${fmt(totalEx)}</td></tr>
-          <tr style="background:#E3F2FD;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><td colspan="4" style="padding:8px 6px;font-weight:800;color:#0D47A1;">⚖️ Net Balance</td><td style="padding:8px 6px;text-align:right;font-weight:800;color:#0D47A1;">Rs${fmt(balance)}</td></tr>
-        </tfoot></table>`;
+      <thead><tr style="background:#0D47A1;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        <th style="padding:8px 6px;font-size:10px;">#</th><th style="padding:8px 6px;font-size:10px;">Date</th>
+        <th style="padding:8px 6px;font-size:10px;">Description</th><th style="padding:8px 6px;font-size:10px;">Type</th>
+        <th style="padding:8px 6px;text-align:right;font-size:10px;">Amount</th>
+      </tr></thead>
+      <tbody>${allRows.map((r,i)=>`<tr style="background:${i%2===0?'#fff':'#F5F9FF'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${i+1}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${formatDate(r.date)}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;font-weight:600;">${r.desc}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;"><span style="padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;background:${r.type==='Income'?'#E8F5E9':'#FFEBEE'};color:${r.type==='Income'?'#2E7D32':'#C62828'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">${r.type}</span></td>
+        <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;text-align:right;font-weight:700;color:${r.type==='Income'?'#2E7D32':'#C62828'};">${r.type==='Income'?'+':'-'}Rs${fmt(r.amount)}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot>
+        <tr style="background:#E8F5E9;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><td colspan="4" style="padding:8px 6px;font-weight:800;color:#2E7D32;">✅ Total Income</td><td style="padding:8px 6px;text-align:right;font-weight:800;color:#2E7D32;">Rs${fmt(totalIn)}</td></tr>
+        <tr style="background:#FFEBEE;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><td colspan="4" style="padding:8px 6px;font-weight:800;color:#C62828;">🔴 Total Expense</td><td style="padding:8px 6px;text-align:right;font-weight:800;color:#C62828;">Rs${fmt(totalEx)}</td></tr>
+        <tr style="background:#E3F2FD;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><td colspan="4" style="padding:8px 6px;font-weight:800;color:#0D47A1;">⚖️ Net Balance</td><td style="padding:8px 6px;text-align:right;font-weight:800;color:#0D47A1;">Rs${fmt(balance)}</td></tr>
+      </tfoot></table>`;
   }
-
   const pw=window.open('','_blank','width=900,height=700');
   if(!pw){showToast('⚠️ Popup block hai — browser settings check karein');return;}
   pw.document.write(`<!DOCTYPE html><html><head>
@@ -1097,9 +1073,7 @@ function printReport(){
 body{font-family:Poppins,Arial,sans-serif;background:white;color:#0D1B2A}
 .page-header{margin-bottom:14px}
 table{width:100%;border-collapse:collapse}
-thead{display:table-header-group}
-tfoot{display:table-footer-group}
-tbody{display:table-row-group}
+thead{display:table-header-group}tfoot{display:table-footer-group}tbody{display:table-row-group}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.no-print{display:none!important}}
 .print-btn{display:block;margin:16px auto;padding:12px 36px;background:#1565C0;color:white;border:none;border-radius:8px;font-family:Poppins,Arial,sans-serif;font-size:15px;font-weight:700;cursor:pointer}
 .footer-note{text-align:center;font-size:9px;color:#9E9E9E;margin-top:10px;padding-top:8px;border-top:1px solid #EEE}
@@ -1123,7 +1097,6 @@ async function exportData(){
   const fname=`FGI_Expense_Backup_${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}.json`;
   openFolderPicker('💾 Backup Kahan Save?','JSON backup file save karein',blob,fname);
 }
-
 async function importData(e){
   const file=e.target.files[0];if(!file)return;
   try{
@@ -1169,7 +1142,6 @@ function deleteEntry(type,id){
   };
   openModal('modalConfirm');
 }
-
 async function editEntry(type,id){
   const r=await dbGet(type,id);if(!r)return;
   document.getElementById('editEntryId').value=id;document.getElementById('editEntryType').value=type;
@@ -1193,7 +1165,6 @@ async function editEntry(type,id){
   }
   openModal('modalEditEntry');
 }
-
 async function saveEditEntry(){
   const id=parseInt(document.getElementById('editEntryId').value);
   const type=document.getElementById('editEntryType').value;
@@ -1231,7 +1202,6 @@ function switchPage(pageId,navBtn){
   if(pageId==='pageSettings'){updateSQStatus();}
   window.scrollTo(0,0);
 }
-
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
@@ -1268,8 +1238,6 @@ async function loadApp(){
   const today=new Date().toISOString().split('T')[0];
   document.getElementById('filterTo').value=today;
 }
-
-// Lock button handled via onclick in HTML
 
 (async()=>{await initDB();})();
 
