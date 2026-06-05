@@ -569,7 +569,7 @@ const getSetting=async key=>{const r=await dbGet('settings',key);return r?r.valu
 const setSetting=(key,value)=>dbPut('settings',{key,value});
 
 // ============================================================
-//  LOCK SCREEN HELPERS — FIXED
+//  LOCK SCREEN HELPERS
 // ============================================================
 function showLockScreen(){
   const ls=document.getElementById('lock-screen');
@@ -578,29 +578,6 @@ function showLockScreen(){
 function hideLockScreen(){
   const ls=document.getElementById('lock-screen');
   ls.style.display='none';
-}
-
-// ============================================================
-//  LOCK APP — FIXED (addEventListener approach)
-// ============================================================
-function lockApp(){
-  // Reset PIN state
-  pinMode='enter';
-  pinBuf='';
-  newPinTmp='';
-  document.getElementById('pin-mode-label').textContent='ENTER PIN';
-  document.getElementById('pin-error').textContent='';
-  document.getElementById('pin-error').style.color='#FF8A80';
-  updDots();
-  // Reset forgot PIN
-  document.getElementById('forgot-pin-section').style.display='none';
-  document.getElementById('pin-entry-ui').style.display='flex';
-  // Hide app
-  const appEl=document.getElementById('app');
-  appEl.classList.remove('visible');
-  appEl.style.display='none';
-  // Show lock screen
-  showLockScreen();
 }
 
 // ============================================================
@@ -651,6 +628,25 @@ async function updateSQStatus(){
 //  PIN LOGIC
 // ============================================================
 let pinBuf='',pinMode='enter',newPinTmp='';
+
+// ============================================================
+//  LOCK APP
+// ============================================================
+function lockApp(){
+  pinBuf='';
+  pinMode='enter';
+  newPinTmp='';
+  document.getElementById('pin-mode-label').textContent='ENTER PIN';
+  document.getElementById('pin-error').textContent='';
+  document.getElementById('pin-error').style.color='#FF8A80';
+  updDots();
+  document.getElementById('forgot-pin-section').style.display='none';
+  document.getElementById('pin-entry-ui').style.display='flex';
+  const appEl=document.getElementById('app');
+  appEl.classList.remove('visible');
+  appEl.style.display='none';
+  showLockScreen();
+}
 
 async function pinPress(k){
   if(k==='C')pinBuf='';
