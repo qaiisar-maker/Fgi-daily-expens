@@ -278,7 +278,7 @@ tr:nth-child(even) td{background:#F8FBFF;}
       </div>
       <div class="header-right">
         <div class="header-date"><span id="headerDate">—</span>Ali Pur Chattha</div>
-        <button class="lock-btn-top" id="lockBtnTop" title="Lock App">🔒</button>
+        <button class="lock-btn-top" id="lockBtnTop" onclick="lockApp()" title="Lock App">🔒</button>
       </div>
     </div>
     <div class="summary-row">
@@ -1273,10 +1273,7 @@ async function loadApp(){
   document.getElementById('filterTo').value=today;
 }
 
-// Lock button — addEventListener (safest approach)
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('lockBtnTop').addEventListener('click', lockApp);
-});
+// Lock button handled via onclick in HTML
 
 (async()=>{await initDB();})();
 
