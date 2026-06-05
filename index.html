@@ -10,6 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="FGI Expense">
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- html2canvas for image download -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <title>FGI Expense Manager v3</title>
 <style>
 :root{--primary:#1565C0;--primary-light:#1976D2;--primary-dark:#0D47A1;--accent:#2196F3;--sky:#E3F2FD;--sky2:#BBDEFB;--white:#fff;--text-dark:#0D1B2A;--text-med:#2C3E6B;--text-light:#607D8B;--green:#2E7D32;--green-light:#E8F5E9;--red:#C62828;--red-light:#FFEBEE;--orange:#E65100;--orange-light:#FFF3E0;--shadow:0 4px 20px rgba(21,101,192,0.15);--shadow-lg:0 8px 40px rgba(21,101,192,0.22);--radius:16px;--radius-sm:10px}
@@ -135,6 +137,7 @@ tr:nth-child(even) td{background:#F8FBFF;}
 .action-btn.download{background:var(--primary);color:white;border-color:var(--primary);}
 .action-btn.export{background:white;color:var(--green);border-color:var(--green);}
 .action-btn.import{background:white;color:var(--orange);border-color:var(--orange);}
+.action-btn.img-dl{background:white;color:#7B1FA2;border-color:#7B1FA2;}
 .action-btn:active{transform:scale(0.96);}
 
 /* SETTINGS */
@@ -171,6 +174,13 @@ tr:nth-child(even) td{background:#F8FBFF;}
 .recent-amount{font-size:13px;font-weight:700;}
 .recent-amount.in{color:var(--green);}
 .recent-amount.ex{color:var(--red);}
+
+/* IMAGE DOWNLOAD LOADING */
+#img-dl-overlay{position:fixed;inset:0;background:rgba(13,27,42,0.7);z-index:9998;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
+#img-dl-overlay.show{display:flex;}
+.img-dl-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+#img-dl-overlay p{color:white;font-size:14px;font-weight:600;}
 
 /* ============ PRINT STYLES — A4 Multi-page ============ */
 @media print {
@@ -242,6 +252,12 @@ tr:nth-child(even) td{background:#F8FBFF;}
   </div>
 </div>
 
+<!-- IMAGE DOWNLOAD LOADING OVERLAY -->
+<div id="img-dl-overlay">
+  <div class="img-dl-spinner"></div>
+  <p>📸 Image ban rahi hai...</p>
+</div>
+
 <div id="offline-bar">📵 Offline Mode — Data safe hai</div>
 <div id="toast"></div>
 
@@ -262,7 +278,7 @@ tr:nth-child(even) td{background:#F8FBFF;}
       </div>
       <div class="header-right">
         <div class="header-date"><span id="headerDate">—</span>Ali Pur Chattha</div>
-        <button class="lock-btn-top" onclick="lockApp()" title="Lock App">🔒</button>
+        <button class="lock-btn-top" id="lockBtnTop" title="Lock App">🔒</button>
       </div>
     </div>
     <div class="summary-row">
@@ -349,8 +365,10 @@ tr:nth-child(even) td{background:#F8FBFF;}
         <div style="font-size:36px;opacity:0.3">⚖️</div>
       </div>
       <div id="reportTableArea"></div>
+      <!-- ACTION BUTTONS -->
       <div class="report-action-row">
         <button class="action-btn download" onclick="printReport()">🖨️ Print / Save PDF</button>
+        <button class="action-btn img-dl" onclick="downloadReportImage()">🖼️ Save Image</button>
       </div>
       <div class="report-action-row" style="margin-top:8px;">
         <button class="action-btn export" onclick="exportData()">📤 Export JSON</button>
@@ -555,15 +573,34 @@ const setSetting=(key,value)=>dbPut('settings',{key,value});
 // ============================================================
 function showLockScreen(){
   const ls=document.getElementById('lock-screen');
-  ls.style.display='flex';
-  ls.classList.remove('hide');
-  ls.classList.add('show');
+  ls.style.cssText='position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#0D47A1 0%,#1565C0 50%,#1976D2 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;overflow-y:auto;';
 }
 function hideLockScreen(){
   const ls=document.getElementById('lock-screen');
   ls.style.display='none';
-  ls.classList.remove('show');
-  ls.classList.add('hide');
+}
+
+// ============================================================
+//  LOCK APP — FIXED (addEventListener approach)
+// ============================================================
+function lockApp(){
+  // Reset PIN state
+  pinMode='enter';
+  pinBuf='';
+  newPinTmp='';
+  document.getElementById('pin-mode-label').textContent='ENTER PIN';
+  document.getElementById('pin-error').textContent='';
+  document.getElementById('pin-error').style.color='#FF8A80';
+  updDots();
+  // Reset forgot PIN
+  document.getElementById('forgot-pin-section').style.display='none';
+  document.getElementById('pin-entry-ui').style.display='flex';
+  // Hide app
+  const appEl=document.getElementById('app');
+  appEl.classList.remove('visible');
+  appEl.style.display='none';
+  // Show lock screen
+  showLockScreen();
 }
 
 // ============================================================
@@ -663,26 +700,6 @@ async function pinPress(k){
 
 function updDots(){for(let i=0;i<4;i++)document.getElementById('dot'+i).classList.toggle('filled',i<pinBuf.length);}
 function startChangePin(){pinMode='set-new';pinBuf='';newPinTmp='';document.getElementById('pin-mode-label').textContent='SET NEW PIN';document.getElementById('pin-error').textContent='';updDots();}
-
-// ============================================================
-//  LOCK APP — FIXED
-// ============================================================
-function lockApp(){
-  pinMode='enter';pinBuf='';
-  document.getElementById('pin-mode-label').textContent='ENTER PIN';
-  document.getElementById('pin-error').textContent='';
-  document.getElementById('pin-error').style.color='#FF8A80';
-  updDots();
-  // Hide app properly
-  const appEl=document.getElementById('app');
-  appEl.classList.remove('visible');
-  appEl.style.display='none';
-  // Reset forgot pin
-  document.getElementById('forgot-pin-section').style.display='none';
-  document.getElementById('pin-entry-ui').style.display='flex';
-  // Show lock screen
-  showLockScreen();
-}
 
 // ============================================================
 //  FORGOT PIN
@@ -891,7 +908,87 @@ function renderReportTable(){
 }
 
 // ============================================================
-//  PRINT REPORT — A4 Multi-page (replaces downloadReportImage)
+//  DOWNLOAD REPORT AS IMAGE (NEW FEATURE)
+// ============================================================
+async function downloadReportImage(){
+  const tableArea=document.getElementById('reportTableArea');
+  if(!tableArea||!tableArea.innerHTML.trim()||tableArea.querySelector('.empty-state')){
+    showToast('⚠️ Pehle report load karein!');return;
+  }
+  const overlay=document.getElementById('img-dl-overlay');
+  overlay.classList.add('show');
+
+  try{
+    // Build a clean off-screen container for capturing
+    const container=document.createElement('div');
+    container.style.cssText='position:fixed;left:-9999px;top:0;width:800px;background:white;font-family:Poppins,Arial,sans-serif;padding:0;';
+    document.body.appendChild(container);
+
+    const totalIn=filteredIncome.reduce((s,r)=>s+r.amount,0);
+    const totalEx=filteredExpense.reduce((s,r)=>s+r.amount,0);
+    const bal=totalIn-totalEx;
+    const now=new Date();
+    const dateStr=String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+    const tabLabel={income:'Income Report',expense:'Expense Report',combined:'Combined Report'}[currentReportTab];
+
+    container.innerHTML=`
+      <div style="background:linear-gradient(135deg,#0D47A1,#1565C0);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:white;">FGI — ${tabLabel}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:3px;">Faisal Goraya Industry · Ali Pur Chattha</div>
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.8);">${dateStr}</div>
+      </div>
+      <div style="display:flex;border-bottom:2px solid #BBDEFB;">
+        <div style="flex:1;background:#E8F5E9;padding:14px;text-align:center;">
+          <div style="font-size:10px;color:#555;">TOTAL INCOME</div>
+          <div style="font-size:20px;font-weight:800;color:#2E7D32;">Rs${fmt(totalIn)}</div>
+        </div>
+        <div style="flex:1;background:#FFEBEE;padding:14px;text-align:center;">
+          <div style="font-size:10px;color:#555;">TOTAL EXPENSE</div>
+          <div style="font-size:20px;font-weight:800;color:#C62828;">Rs${fmt(totalEx)}</div>
+        </div>
+        <div style="flex:1;background:${bal>=0?'#E8F5E9':'#FFEBEE'};padding:14px;text-align:center;">
+          <div style="font-size:10px;color:#555;">NET BALANCE</div>
+          <div style="font-size:20px;font-weight:800;color:${bal>=0?'#2E7D32':'#C62828'};">Rs${fmt(bal)}</div>
+        </div>
+      </div>
+      <div style="padding:16px;">
+        ${tableArea.innerHTML}
+      </div>
+      <div style="text-align:center;padding:10px;font-size:10px;color:#9E9E9E;border-top:1px solid #EEE;">
+        FGI Expense Manager v3 · Ali Pur Chattha · ${dateStr}
+      </div>`;
+
+    // Fix table styles for capture (remove min-width constraint)
+    const tbl=container.querySelector('table');
+    if(tbl){tbl.style.minWidth='0';tbl.style.width='100%';}
+    // Remove action buttons from image
+    container.querySelectorAll('button').forEach(b=>b.remove());
+
+    const canvas=await html2canvas(container,{
+      scale:2,
+      useCORS:true,
+      backgroundColor:'#ffffff',
+      logging:false
+    });
+    document.body.removeChild(container);
+
+    canvas.toBlob(blob=>{
+      overlay.classList.remove('show');
+      if(!blob){showToast('❌ Image ban nahi saki');return;}
+      const fname=`FGI_Report_${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}.png`;
+      openFolderPicker('🖼️ Report Image Save Karein?','PNG image download ya share karein',blob,fname);
+    },'image/png');
+
+  }catch(err){
+    overlay.classList.remove('show');
+    showToast('❌ Image error: '+err.message);
+  }
+}
+
+// ============================================================
+//  PRINT REPORT — A4 Multi-page
 // ============================================================
 function printReport(){
   const tab=currentReportTab;
@@ -905,7 +1002,6 @@ function printReport(){
   const dateStr=dd+'/'+mm+'/'+yy;
   const tabLabel={income:'Income Report',expense:'Expense Report',combined:'Combined Report'}[tab];
 
-  // Build header HTML (repeated on every page via thead)
   const pageHeader=`
     <div style="background:linear-gradient(135deg,#0D47A1,#1565C0);padding:18px 22px;color:white;display:flex;align-items:center;justify-content:space-between;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
       <div>
@@ -929,182 +1025,95 @@ function printReport(){
       </div>
     </div>`;
 
-  // Build table with thead (browser repeats thead on every print page automatically)
   let tableHTML='';
   if(tab==='income'){
-    tableHTML=`
-      <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Poppins,Arial,sans-serif;">
-        <thead>
-          <tr style="background:#0D47A1;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">#</th>
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">Date</th>
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">Customer</th>
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">Method</th>
-            <th style="padding:8px 6px;text-align:right;font-size:10px;">Amount</th>
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">Remarks</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${filteredIncome.map((r,i)=>`
-            <tr style="background:${i%2===0?'#fff':'#F0F7FF'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-              <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${i+1}</td>
-              <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${formatDate(r.date)}</td>
-              <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;font-weight:600;">${r.customer}</td>
-              <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${r.method}</td>
-              <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;text-align:right;font-weight:700;color:#2E7D32;">Rs${fmt(r.amount)}</td>
-              <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;color:#607D8B;">${r.remarks||'—'}</td>
-            </tr>`).join('')}
-        </tbody>
-        <tfoot>
-          <tr style="background:#E8F5E9;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-            <td colspan="4" style="padding:9px 6px;font-weight:800;color:#2E7D32;">✅ Total Income</td>
-            <td style="padding:9px 6px;text-align:right;font-weight:800;color:#2E7D32;">Rs${fmt(totalIn)}</td>
-            <td></td>
-          </tr>
-        </tfoot>
-      </table>`;
+    tableHTML=`<table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Poppins,Arial,sans-serif;">
+        <thead><tr style="background:#0D47A1;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+          <th style="padding:8px 6px;text-align:left;font-size:10px;">#</th>
+          <th style="padding:8px 6px;text-align:left;font-size:10px;">Date</th>
+          <th style="padding:8px 6px;text-align:left;font-size:10px;">Customer</th>
+          <th style="padding:8px 6px;text-align:left;font-size:10px;">Method</th>
+          <th style="padding:8px 6px;text-align:right;font-size:10px;">Amount</th>
+          <th style="padding:8px 6px;text-align:left;font-size:10px;">Remarks</th>
+        </tr></thead>
+        <tbody>${filteredIncome.map((r,i)=>`<tr style="background:${i%2===0?'#fff':'#F0F7FF'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${i+1}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${formatDate(r.date)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;font-weight:600;">${r.customer}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${r.method}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;text-align:right;font-weight:700;color:#2E7D32;">Rs${fmt(r.amount)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;color:#607D8B;">${r.remarks||'—'}</td>
+        </tr>`).join('')}</tbody>
+        <tfoot><tr style="background:#E8F5E9;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+          <td colspan="4" style="padding:9px 6px;font-weight:800;color:#2E7D32;">✅ Total Income</td>
+          <td style="padding:9px 6px;text-align:right;font-weight:800;color:#2E7D32;">Rs${fmt(totalIn)}</td><td></td>
+        </tr></tfoot></table>`;
   }else if(tab==='expense'){
-    tableHTML=`
-      <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Poppins,Arial,sans-serif;">
-        <thead>
-          <tr style="background:#0D47A1;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">#</th>
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">Date</th>
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">Category</th>
-            <th style="padding:8px 6px;text-align:right;font-size:10px;">Amount</th>
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">Remarks</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${filteredExpense.map((r,i)=>`
-            <tr style="background:${i%2===0?'#fff':'#FFF5F5'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-              <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;">${i+1}</td>
-              <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;">${formatDate(r.date)}</td>
-              <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;font-weight:600;">${r.category}</td>
-              <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;text-align:right;font-weight:700;color:#C62828;">Rs${fmt(r.amount)}</td>
-              <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;color:#607D8B;">${r.remarks||'—'}</td>
-            </tr>`).join('')}
-        </tbody>
-        <tfoot>
-          <tr style="background:#FFEBEE;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-            <td colspan="3" style="padding:9px 6px;font-weight:800;color:#C62828;">🔴 Total Expense</td>
-            <td style="padding:9px 6px;text-align:right;font-weight:800;color:#C62828;">Rs${fmt(totalEx)}</td>
-            <td></td>
-          </tr>
-        </tfoot>
-      </table>`;
+    tableHTML=`<table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Poppins,Arial,sans-serif;">
+        <thead><tr style="background:#0D47A1;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+          <th style="padding:8px 6px;font-size:10px;">#</th>
+          <th style="padding:8px 6px;font-size:10px;">Date</th>
+          <th style="padding:8px 6px;font-size:10px;">Category</th>
+          <th style="padding:8px 6px;text-align:right;font-size:10px;">Amount</th>
+          <th style="padding:8px 6px;font-size:10px;">Remarks</th>
+        </tr></thead>
+        <tbody>${filteredExpense.map((r,i)=>`<tr style="background:${i%2===0?'#fff':'#FFF5F5'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+          <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;">${i+1}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;">${formatDate(r.date)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;font-weight:600;">${r.category}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;text-align:right;font-weight:700;color:#C62828;">Rs${fmt(r.amount)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #FFE0E0;color:#607D8B;">${r.remarks||'—'}</td>
+        </tr>`).join('')}</tbody>
+        <tfoot><tr style="background:#FFEBEE;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+          <td colspan="3" style="padding:9px 6px;font-weight:800;color:#C62828;">🔴 Total Expense</td>
+          <td style="padding:9px 6px;text-align:right;font-weight:800;color:#C62828;">Rs${fmt(totalEx)}</td><td></td>
+        </tr></tfoot></table>`;
   }else{
     const allRows=[...filteredIncome.map(r=>({date:r.date,desc:r.customer,type:'Income',amount:r.amount})),...filteredExpense.map(r=>({date:r.date,desc:r.category,type:'Expense',amount:r.amount}))].sort((a,b)=>a.date>b.date?-1:1);
-    tableHTML=`
-      <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Poppins,Arial,sans-serif;">
-        <thead>
-          <tr style="background:#0D47A1;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">#</th>
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">Date</th>
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">Description</th>
-            <th style="padding:8px 6px;text-align:left;font-size:10px;">Type</th>
-            <th style="padding:8px 6px;text-align:right;font-size:10px;">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${allRows.map((r,i)=>`
-            <tr style="background:${i%2===0?'#fff':'#F5F9FF'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-              <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${i+1}</td>
-              <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${formatDate(r.date)}</td>
-              <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;font-weight:600;">${r.desc}</td>
-              <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">
-                <span style="padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;background:${r.type==='Income'?'#E8F5E9':'#FFEBEE'};color:${r.type==='Income'?'#2E7D32':'#C62828'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">${r.type}</span>
-              </td>
-              <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;text-align:right;font-weight:700;color:${r.type==='Income'?'#2E7D32':'#C62828'};">${r.type==='Income'?'+':'-'}Rs${fmt(r.amount)}</td>
-            </tr>`).join('')}
-        </tbody>
+    tableHTML=`<table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Poppins,Arial,sans-serif;">
+        <thead><tr style="background:#0D47A1;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+          <th style="padding:8px 6px;font-size:10px;">#</th><th style="padding:8px 6px;font-size:10px;">Date</th>
+          <th style="padding:8px 6px;font-size:10px;">Description</th><th style="padding:8px 6px;font-size:10px;">Type</th>
+          <th style="padding:8px 6px;text-align:right;font-size:10px;">Amount</th>
+        </tr></thead>
+        <tbody>${allRows.map((r,i)=>`<tr style="background:${i%2===0?'#fff':'#F5F9FF'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${i+1}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;">${formatDate(r.date)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;font-weight:600;">${r.desc}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;"><span style="padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;background:${r.type==='Income'?'#E8F5E9':'#FFEBEE'};color:${r.type==='Income'?'#2E7D32':'#C62828'};-webkit-print-color-adjust:exact;print-color-adjust:exact;">${r.type}</span></td>
+          <td style="padding:7px 6px;border-bottom:1px solid #E3F2FD;text-align:right;font-weight:700;color:${r.type==='Income'?'#2E7D32':'#C62828'};">${r.type==='Income'?'+':'-'}Rs${fmt(r.amount)}</td>
+        </tr>`).join('')}</tbody>
         <tfoot>
           <tr style="background:#E8F5E9;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><td colspan="4" style="padding:8px 6px;font-weight:800;color:#2E7D32;">✅ Total Income</td><td style="padding:8px 6px;text-align:right;font-weight:800;color:#2E7D32;">Rs${fmt(totalIn)}</td></tr>
           <tr style="background:#FFEBEE;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><td colspan="4" style="padding:8px 6px;font-weight:800;color:#C62828;">🔴 Total Expense</td><td style="padding:8px 6px;text-align:right;font-weight:800;color:#C62828;">Rs${fmt(totalEx)}</td></tr>
           <tr style="background:#E3F2FD;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><td colspan="4" style="padding:8px 6px;font-weight:800;color:#0D47A1;">⚖️ Net Balance</td><td style="padding:8px 6px;text-align:right;font-weight:800;color:#0D47A1;">Rs${fmt(balance)}</td></tr>
-        </tfoot>
-      </table>`;
+        </tfoot></table>`;
   }
 
-  // Open print window
   const pw=window.open('','_blank','width=900,height=700');
   if(!pw){showToast('⚠️ Popup block hai — browser settings check karein');return;}
-  pw.document.write(`<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>FGI — ${tabLabel}</title>
+  pw.document.write(`<!DOCTYPE html><html><head>
+<meta charset="UTF-8"><title>FGI — ${tabLabel}</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  @page {
-    size: A4;
-    margin: 14mm 12mm 14mm 12mm;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    font-family: Poppins, Arial, sans-serif;
-    background: white;
-    color: #0D1B2A;
-  }
-  .page-header {
-    margin-bottom: 14px;
-  }
-  .table-wrap {
-    margin-top: 12px;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  thead {
-    display: table-header-group; /* Repeats on every page */
-  }
-  tfoot {
-    display: table-footer-group;
-  }
-  tbody {
-    display: table-row-group;
-  }
-  @media print {
-    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .no-print { display: none !important; }
-  }
-  .print-btn {
-    display: block;
-    margin: 16px auto;
-    padding: 12px 36px;
-    background: #1565C0;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-family: Poppins, Arial, sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  .footer-note {
-    text-align: center;
-    font-size: 9px;
-    color: #9E9E9E;
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 1px solid #EEE;
-  }
-</style>
-</head>
-<body>
+@page{size:A4;margin:14mm 12mm 14mm 12mm}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Poppins,Arial,sans-serif;background:white;color:#0D1B2A}
+.page-header{margin-bottom:14px}
+table{width:100%;border-collapse:collapse}
+thead{display:table-header-group}
+tfoot{display:table-footer-group}
+tbody{display:table-row-group}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.no-print{display:none!important}}
+.print-btn{display:block;margin:16px auto;padding:12px 36px;background:#1565C0;color:white;border:none;border-radius:8px;font-family:Poppins,Arial,sans-serif;font-size:15px;font-weight:700;cursor:pointer}
+.footer-note{text-align:center;font-size:9px;color:#9E9E9E;margin-top:10px;padding-top:8px;border-top:1px solid #EEE}
+</style></head><body>
 <button class="print-btn no-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
-<div class="page-header">
-${pageHeader}
-</div>
-<div class="table-wrap">
-${tableHTML}
-</div>
-<div class="footer-note">FGI Expense Manager v3 — Faisal Goraya Industry, Ali Pur Chattha — Printed: ${dateStr}</div>
-</body>
-</html>`);
-  pw.document.close();
-  pw.focus();
+<div class="page-header">${pageHeader}</div>
+<div>${tableHTML}</div>
+<div class="footer-note">FGI Expense Manager v3 — Faisal Goraya Industry, Ali Pur Chattha — ${dateStr}</div>
+</body></html>`);
+  pw.document.close();pw.focus();
 }
 
 // ============================================================
@@ -1263,6 +1272,11 @@ async function loadApp(){
   const today=new Date().toISOString().split('T')[0];
   document.getElementById('filterTo').value=today;
 }
+
+// Lock button — addEventListener (safest approach)
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('lockBtnTop').addEventListener('click', lockApp);
+});
 
 (async()=>{await initDB();})();
 
